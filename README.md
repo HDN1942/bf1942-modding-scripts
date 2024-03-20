@@ -27,9 +27,46 @@ Options:
 * `--archive` - RFA file name to match when using archive extract choice
 * `--overwrite` - overwrite any existing files in destination path, otherwise files in the RFA that match an existing file will be skipped
 
+#### Pack one or more directories into RFA archives
+
+```bash
+
+python3 pack.py [-h] [--base-path] [--mod] [--overwrite] source_path destination_path
+```
+
+Positional arguments:
+* `source_path` - Source path to pack
+* `destination_path` - Destination path for packed RFAs
+
+Options:
+* `-b`, `--base-path` - Base path for RFA directory structure, ignored when `--mod` option is used
+* `-m`, `--mod` - `source_path` is an extracted mod with the standard directory structure, all detected RFAs will be packed
+* `-o`, `--overwrite` - Overwrite any existing files in destination path, otherwise RFAs existing in the destination will be skipped
+
+`source_path` is assumed to be a single directory to pack unless the `--mod` option is specified, in which case each detected RFA will be packed.
+
+The standard mod directory structure is:
+
+```bash
+ai
+aimeshes
+animations
+bf1942/
+    game
+    levels/*
+font
+menu
+objects
+shaders
+sound
+standardmesh
+texture
+treemesh
+```
+
 ## License
 
-Code is released under GPL-3.0 license, except for RFA.py which has no specific license.
+Code is released under GPL-3.0 license unless specified otherwise in source. 
 
 ## Credits
 

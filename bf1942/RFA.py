@@ -1,3 +1,6 @@
+# from https://github.com/Ahrkylien/BF1942-Extraction-Readout-Scripts
+# license not specified
+
 import os
 import struct
 import lzo

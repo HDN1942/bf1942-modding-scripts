@@ -3,7 +3,10 @@
 import argparse
 import os
 import sys
-from lib import *
+from bf1942.rfa import *
+from bf1942.shell import *
+
+E_INVALID_ARCHIVE_OPTION = 100
 
 parser = argparse.ArgumentParser(description='Extract RFAs from a mod')
 parser.add_argument('extract', choices=['full', 'levels', 'archive'], help='Specifies which archives to extract, full - extract all RFAs and copy non-RFA files, levels - extract all level RFAs, archive - extract RFA with matching file name within the mod\'s directory tree')
@@ -13,13 +16,8 @@ parser.add_argument('--archive', help='File name of RFA to match when using arch
 parser.add_argument('--overwrite', action='store_true', default=False, help='Overwrite any existing files in destination path, otherwise files in the mod that match an existing file, or extracted RFA, will be skipped')
 args = parser.parse_args()
 
-if os.access(args.mod_path, os.R_OK) is False:
-    eprint(f'Mod directory "{args.mod_path}" does not exist or does not have read permissions')
-    sys.exit(E_MOD_DIRECTORY_NOT_READABLE)
-
-if os.access(args.destination_path, os.W_OK) is False:
-    eprint(f'Destination directory "{args.destination_path}" does not exist or does not have write permissions')
-    sys.exit(E_DESTINATION_DIRECTORY_NOT_WRITABLE)
+test_src_dir(args.source_path)
+test_dst_dir(args.destination_path)
 
 if args.extract == 'archive':
     if args.archive is None:
@@ -36,7 +34,7 @@ elif args.extract == 'levels':
     mod_levels_path = get_path_nocase(args.mod_path, LEVELS_SUB_PATH)
     if os.access(args.mod_path, os.R_OK) is False:
         eprint(f'Mod levels directory "{mod_levels_path}" does not exist or does not have read permissions')
-        sys.exit(E_MOD_LEVELS_DIRECTORY_NOT_READABLE)
+        sys.exit(E_SOURCE_DIRECTORY_NOT_READABLE)
 
     extract_directory(args.mod_path, args.destination_path, args.overwrite, LEVELS_SUB_PATH)
 else:
