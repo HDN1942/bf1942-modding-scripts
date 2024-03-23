@@ -2,7 +2,7 @@ import shutil
 import unittest
 from pathlib import Path
 from bf1942.path import path_join_insensitive
-from bf1942.testing import *
+from bf1942.testutil import *
 
 class TestMethod(unittest.TestCase):
     def setUp(self):

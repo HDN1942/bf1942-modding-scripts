@@ -157,7 +157,7 @@ def pack_directory(src, dst, ovr, base):
     if dst_item.exists() and ovr is False:
         print(f'pack: skip: {rfa_name}')
         return
-    
+
     if dst_item.exists():
         print(f'pack: overwrite: {rfa_name}')
     else:

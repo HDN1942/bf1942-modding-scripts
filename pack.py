@@ -3,7 +3,7 @@
 import argparse
 import os
 import sys
-from bf1942.rfa import *
+from bf1942.rfa_facade import *
 from bf1942.shell import *
 
 E_INVALID_BASE_PATH = 100

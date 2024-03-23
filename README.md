@@ -4,10 +4,18 @@ A set of Python 3 scripts to aid in Battlefield 1942 modding.
 
 ## Prerequisites
 
+#### Debian Linux
 ```bash
 sudo apt-get install liblzo2-dev
+pip install -r rquirements.txt
+```
 
-pip install -r requirements.txt
+#### MacOS
+```bash
+brew install python3 lzo pillow
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install -r requirements.txt
 ```
 
 ## Usage
