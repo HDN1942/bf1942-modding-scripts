@@ -13,7 +13,7 @@ parser.add_argument('source_path', help='Source path to pack')
 parser.add_argument('destination_path', help='Destination path for packed RFAs')
 parser.add_argument('-b', '--base-path', dest='base_path', help='Base path for RFA directory structure, ignored when --mod option is used')
 parser.add_argument('-m', '--mod', action='store_true', default=False, help='source_path is an extracted mod with the standard directory structure, all detected RFAs will be packed')
-parser.add_argument('-o', '--overwrite', action='store_true', default=False, help='Overwrite any existing files in destination path, otherwise RFAs existing in the destination will be skipped')
+parser.add_argument('--overwrite', action='store_true', default=False, help='Overwrite any existing files in destination path, otherwise RFAs existing in the destination will be skipped')
 args = parser.parse_args()
 
 test_src_dir(args.source_path)

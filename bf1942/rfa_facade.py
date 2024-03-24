@@ -3,7 +3,7 @@ import shutil
 import sys
 from pathlib import Path
 from bf1942.RFA import RefractorFlatArchive
-from bf1942.path import path_join_insensitive
+from bf1942.path import path_join_insensitive, path_equal_insensitive
 
 BF1942_DIRECTORY = 'bf1942'
 LEVELS_DIRECTORY = 'levels'
@@ -76,7 +76,7 @@ def extract_rfa(src, dst, ovr, item):
 
 def extract_archive(src, dst, ovr, name):
     _, _, rfas = tree(src)
-    target_rfas = [x for x in rfas if x.stem.lower().find(name) > -1]
+    target_rfas = [x for x in rfas if x.stem.lower().find(name.lower()) > -1]
 
     for item in target_rfas:
         extract_rfa(src, dst, ovr, item)
@@ -125,28 +125,30 @@ def pack_mod(src, dst, ovr):
     bf1942_path = src_path / BF1942_DIRECTORY
     levels_path = bf1942_path / LEVELS_DIRECTORY
     
+    dst_path.mkdir(parents=True, exist_ok=True)
+
     for root, dirs, files in os.walk(src_path):
         root_path = Path(root)
 
         if root_path == src_path:
             items = compare_dirs(root_path, TOP_LEVEL_RFAS, dirs)
             for item in items:
-                pack_directory(item, dst_path, ovr, root)
+                pack_directory(item, dst_path, ovr, src_path)
 
-        elif root_path == bf1942_path:
-            bf1942_dst_path = path_join_insensitive(dst_path, BF1942_DIRECTORY)
-            bf1942_dst_path.mkdir(exist_ok=True)
+        elif path_equal_insensitive(root_path, bf1942_path):
+            bf1942_dst_path = path_join_insensitive(dst_path, root_path.name)
+            bf1942_dst_path.mkdir(parents=True, exist_ok=True)
 
             items = compare_dirs(root_path, BF1942_LEVEL_RFAS, dirs)
             for item in items:
-                pack_directory(item, bf1942_dst_path, ovr, bf1942_path)
+                pack_directory(item, bf1942_dst_path, ovr, src_path)
 
-        elif root_path == levels_path:
-            levels_dst_path = path_join_insensitive(dst_path, Path(BF1942_DIRECTORY / LEVELS_DIRECTORY))
-            levels_dst_path.mkdir(exist_ok=True)
+        elif path_equal_insensitive(root_path, levels_path):
+            levels_dst_path = path_join_insensitive(dst_path, Path(root_path.parent.name, root_path.name))
+            levels_dst_path.mkdir(parents=True, exist_ok=True)
 
             for item in dirs:
-                pack_directory(item, levels_dst_path, ovr, levels_path)
+                pack_directory(root_path / item, levels_dst_path, ovr, src_path)
 
 def pack_directory(src, dst, ovr, base):
     src_path = Path(src)

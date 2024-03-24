@@ -26,3 +26,6 @@ def path_join_insensitive(base, path):
             break
 
     return result
+
+def path_equal_insensitive(path1, path2):
+    return str(path1).lower() == str(path2).lower()

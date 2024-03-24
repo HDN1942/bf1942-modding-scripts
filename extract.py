@@ -16,7 +16,7 @@ parser.add_argument('--archive', help='File name of RFA to match when using arch
 parser.add_argument('--overwrite', action='store_true', default=False, help='Overwrite any existing files in destination path, otherwise files in the mod that match an existing file, or extracted RFA, will be skipped')
 args = parser.parse_args()
 
-test_src_dir(args.source_path)
+test_src_dir(args.mod_path)
 test_dst_dir(args.destination_path)
 
 if args.extract == 'archive':
@@ -31,12 +31,8 @@ else:
 if args.extract == 'archive':
     extract_archive(args.mod_path, args.destination_path, args.overwrite, args.archive)
 elif args.extract == 'levels':
-    mod_levels_path = get_path_nocase(args.mod_path, LEVELS_SUB_PATH)
-    if os.access(args.mod_path, os.R_OK) is False:
-        eprint(f'Mod levels directory "{mod_levels_path}" does not exist or does not have read permissions')
-        sys.exit(E_SOURCE_DIRECTORY_NOT_READABLE)
-
-    extract_directory(args.mod_path, args.destination_path, args.overwrite, LEVELS_SUB_PATH)
+    mod_levels_path = Path('archives', 'bf1942', 'levels')
+    extract_directory(args.mod_path, args.destination_path, args.overwrite, str(mod_levels_path))
 else:
     extract_full(args.mod_path, args.destination_path, args.overwrite)
 

@@ -1,6 +1,4 @@
 import hashlib
-import io
-import sys
 from pathlib import Path
 from bf1942.RFA import RefractorFlatArchive
 
@@ -22,17 +20,10 @@ def create_dummy_file(path, contents='foo'):
     
     return compute_hash(path)
 
-def suppress_stdout():
-    suppress_text = io.StringIO()
-    sys.stdout = suppress_text
-
-def restore_stdout():
-    sys.stdout = sys.__stdout__
-
 def assert_rfa(tc, path, expectedFiles):
     rfa = RefractorFlatArchive(path)
 
-    tc.assertTrue(rfa.success)
+    tc.assertTrue(rfa.success, 'Could not read RFA')
     tc.assertEqual(len(expectedFiles), len(rfa.fileList))
     tc.assertEqual(sorted(expectedFiles), sorted(rfa.getFileList()))
 

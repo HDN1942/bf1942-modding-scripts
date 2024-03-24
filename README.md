@@ -72,9 +72,17 @@ texture
 treemesh
 ```
 
+## Development
+
+#### Run tests
+
+```bash
+python3 -m unittest -b
+```
+
 ## License
 
-Code is released under GPL-3.0 license unless specified otherwise in source. 
+Released under GPL-3.0 license unless specified otherwise in source file. 
 
 ## Credits
 

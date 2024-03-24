@@ -1,10 +1,8 @@
-import io
 import shutil
-import sys
 import unittest
 from pathlib import Path
-from bf1942.testutil import *
 from bf1942.rfa_facade import pack_directory
+from bf1942.testutil import *
 
 class TestMethod(unittest.TestCase):
     def setUp(self):
@@ -39,7 +37,6 @@ class TestMethod(unittest.TestCase):
         pack_directory(str(self.src), str(self.base), True, self.base)
 
         assert_file_hash(self, expected_hash, self.src_rfa, has_changed=True)
-
 
 if __name__ == '__main__':
     unittest.main()
