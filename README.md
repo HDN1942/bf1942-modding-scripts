@@ -38,7 +38,6 @@ Options:
 #### Pack one or more directories into RFA archives
 
 ```bash
-
 python3 pack.py [-h] [--base-path] [--mod] [--overwrite] source_path destination_path
 ```
 
@@ -71,6 +70,31 @@ standardmesh
 texture
 treemesh
 ```
+
+#### Convert pathmaps to/from various formats
+
+```bash
+python3 pathmaps.py [-h] [--in-format FORMAT] [--out-format FORMAT] [--overwrite] source_path destination_path
+```
+
+Supported formats:
+* `raw` - Native Battlefield 1942 pathmap format (NOTE: not yet supported, use `genpathmaps` instead)
+* `bmp` - Uncompressed bitmap format
+* `png` - Portable Network Graphics format with lossless compression
+
+Positional arguments:
+* `source_path` - Source directory containing files in the `--in-format` format
+* `destination_path` - Destination directory for converted files
+
+#### Calculate strategic area coordinates from map coordinates
+
+```bash
+python3 pathmaps.py [-h] --x1 --y1 [--x2] [--y2] [--size] {points,center}
+```
+
+Modes:
+* `points` - Calculate strategic area coordinates for a pair of map coordinates, requires `--x1`, `--y1`, `--x2` and `--y2` options
+* `center` - Calculate strategic area coordinates from a center point and size, requires `--x1`, `--y1` and `--size` options
 
 ## Development
 
