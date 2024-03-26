@@ -3,7 +3,7 @@ from pathlib import Path
 def path_join_insensitive(base, path):
     path = Path(path)
     result = Path(base)
-    
+
     if not result.exists():
         return result / path
         
@@ -11,11 +11,11 @@ def path_join_insensitive(base, path):
         dirs = [d for d in result.iterdir() if d.is_dir()]
 
         # exact match
-        if part in dirs:
+        if part in [d.name for d in dirs]:
             result /= part
             continue
 
-        candidates = [d for d in dirs if d.stem.lower() == part.lower()]
+        candidates = [d.name for d in dirs if d.name.lower() == part.lower()]
 
         if len(candidates) > 0:
             # one or more candidates, pick first

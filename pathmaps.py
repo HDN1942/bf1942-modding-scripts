@@ -21,8 +21,8 @@ E_SAME_FORMAT = 101
 SUPPORTED_FORMATS = ['raw', 'bmp', 'png']
 
 parser = argparse.ArgumentParser(description='Convert pathmaps to/from various formats')
-parser.add_argument('source_path', help='Source path containing files to convert')
-parser.add_argument('destination_path', help='Destination path for converted image')
+parser.add_argument('source_path', help='Source directory containing files in the --in-format format')
+parser.add_argument('destination_path', help='Destination directory for converted files')
 parser.add_argument('-i', '--in-format', dest='in_format', choices=SUPPORTED_FORMATS, required=True, help='Input format')
 parser.add_argument('-o', '--out-format', dest='out_format', choices=SUPPORTED_FORMATS, required=True, help='Output format')
 parser.add_argument('--overwrite', action='store_true', default=False, help='Overwrite any existing files in destination path')

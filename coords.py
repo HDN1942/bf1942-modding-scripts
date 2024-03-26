@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import sys
 from bf1942.shell import *
 
 def calc_points(x1, y1, x2, y2):
@@ -52,4 +53,4 @@ else:
     xx1, yy1, xx2, yy2 = calc_points(x1, y1, x2, y2)
 
 print(f'{xx1}/{yy1} {xx2}/{yy2}')
-
+sys.exit(0)

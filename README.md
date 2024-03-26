@@ -23,34 +23,58 @@ pip3 install -r requirements.txt
 #### Extract archives from mod directory
 
 ```bash
-python3 extract.py [-h] [--archive ARCHIVE] [--overwrite] {full,levels,archive} mod_path destination_path
+python3 -m extract [-h]  [--levels] [--mod] [--overwrite] source_path destination_path
 ```
 
-Extract choices:
-* `full` - copy all mod content and extract all RFAs to target directory
-* `levels` - extract all levels
-* `archive` - extract a specific RFA with (partially) matching name, can be anywhere within the mod's directory tree
+Positional arguments:
+* `source_path`
+
+  Path to RFA file to extract or path to mod in Battlefield 1942 directory (ie. `"c:\Games\Battlefield 1942\Mods\MyMod"`) if either `--levels` or `--mod` option is specified
+
+* `destination_path`
+
+  Destination path for extracted RFA(s)
 
 Options:
-* `--archive` - RFA file name to match when using archive extract choice
-* `--overwrite` - overwrite any existing files in destination path, otherwise files in the RFA that match an existing file will be skipped
+* `-l`, `--levels`
+
+  Extract all level RFAs in mod
+
+* `-m`, `--mod`
+
+  Extract all RFAs in mod
+
+* `--overwrite`
+
+  Overwrite existing directory in destination path, otherwise RFA extraction will be skipped
 
 #### Pack one or more directories into RFA archives
 
 ```bash
-python3 pack.py [-h] [--base-path] [--mod] [--overwrite] source_path destination_path
+python3 -m pack [-h] [--base-path] [--mod] [--overwrite] source_path destination_path
 ```
 
 Positional arguments:
-* `source_path` - Source path to pack
-* `destination_path` - Destination path for packed RFAs
+* `source_path`
+
+  Source path to pack, assumed to be a single directory to pack unless the `--mod` option is specified, in which case each detected RFA will be packed
+
+* `destination_path`
+
+  Destination path for packed RFAs
 
 Options:
-* `-b`, `--base-path` - Base path for RFA directory structure, ignored when `--mod` option is used
-* `-m`, `--mod` - `source_path` is an extracted mod with the standard directory structure, all detected RFAs will be packed
-* `-o`, `--overwrite` - Overwrite any existing files in destination path, otherwise RFAs existing in the destination will be skipped
+* `-b`, `--base-path`
 
-`source_path` is assumed to be a single directory to pack unless the `--mod` option is specified, in which case each detected RFA will be packed.
+  Base path for RFA directory structure, default is parent of `source_path`, ignored when `--mod` option is used
+
+* `-m`, `--mod`
+
+  `source_path` is an extracted mod with the standard directory structure, all detected RFAs will be packed
+
+* `-o`, `--overwrite`
+
+  Overwrite any existing files in destination path, otherwise RFAs existing in the destination will be skipped
 
 The standard mod directory structure is:
 
@@ -74,27 +98,58 @@ treemesh
 #### Convert pathmaps to/from various formats
 
 ```bash
-python3 pathmaps.py [-h] [--in-format FORMAT] [--out-format FORMAT] [--overwrite] source_path destination_path
+python3 -m pathmaps [-h] [--in-format FORMAT] [--out-format FORMAT] [--overwrite] source_path destination_path
 ```
 
 Supported formats:
-* `raw` - Native Battlefield 1942 pathmap format (NOTE: not yet supported, use `genpathmaps` instead)
-* `bmp` - Uncompressed bitmap format
-* `png` - Portable Network Graphics format with lossless compression
+* `raw`
+
+  Native Battlefield 1942 pathmap format (NOTE: not yet supported, use `genpathmaps` instead)
+
+* `bmp`
+
+  Uncompressed bitmap format
+
+* `png`
+
+   Portable Network Graphics format with lossless compression
 
 Positional arguments:
-* `source_path` - Source directory containing files in the `--in-format` format
-* `destination_path` - Destination directory for converted files
+* `source_path`
+
+  Source directory containing files in the `--in-format` format
+
+* `destination_path`
+
+  Destination directory for converted files
+
+Options:
+* `-i`, `--in-format`
+
+  Required, the input format
+
+* `-o`, `--out-format`
+
+  Required, the output format
+
+* `--overwrite`
+
+  Overwrite any existing files in destination path
 
 #### Calculate strategic area coordinates from map coordinates
 
 ```bash
-python3 pathmaps.py [-h] --x1 --y1 [--x2] [--y2] [--size] {points,center}
+python3 -m coords [-h] --x1 --y1 [--x2] [--y2] [--size] {points,center}
 ```
 
 Modes:
-* `points` - Calculate strategic area coordinates for a pair of map coordinates, requires `--x1`, `--y1`, `--x2` and `--y2` options
-* `center` - Calculate strategic area coordinates from a center point and size, requires `--x1`, `--y1` and `--size` options
+* `points`
+
+  Calculate strategic area coordinates for a pair of map coordinates, requires `--x1`, `--y1`, `--x2` and `--y2` options
+
+* `center`
+
+  Calculate strategic area coordinates from a center point and size, requires `--x1`, `--y1` and `--size` options
 
 ## Development
 

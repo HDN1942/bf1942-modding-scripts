@@ -1,7 +1,7 @@
 import shutil
 import unittest
 from pathlib import Path
-from bf1942.rfa_facade import pack_directory
+from bf1942.rfautil import pack_directory
 from bf1942.testutil import *
 
 class TestMethod(unittest.TestCase):

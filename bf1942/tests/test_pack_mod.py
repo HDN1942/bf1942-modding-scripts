@@ -2,7 +2,7 @@ import platform
 import shutil
 import unittest
 from pathlib import Path
-from bf1942.rfa_facade import *
+from bf1942.rfautil import *
 from bf1942.testutil import *
 
 class TestMethod(unittest.TestCase):

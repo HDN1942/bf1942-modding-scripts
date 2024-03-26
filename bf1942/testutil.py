@@ -20,6 +20,13 @@ def create_dummy_file(path, contents='foo'):
     
     return compute_hash(path)
 
+def create_dummy_rfa(path, name, base=None):
+    path = Path(path)
+    base = name if base is None else base
+    rfa = RefractorFlatArchive(path)
+    rfa.addFileAsString(f'{base}/{name}.con', name)
+    rfa.write(path / f'{name}.rfa')
+
 def assert_rfa(tc, path, expectedFiles):
     rfa = RefractorFlatArchive(path)
 
