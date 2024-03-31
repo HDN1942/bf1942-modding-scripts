@@ -7,7 +7,7 @@ A set of Python 3 scripts to aid in Battlefield 1942 modding.
 #### Debian Linux
 ```bash
 sudo apt-get install liblzo2-dev
-pip install -r rquirements.txt
+pip install -r requirements.txt
 ```
 
 #### MacOS
