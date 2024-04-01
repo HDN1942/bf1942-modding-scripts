@@ -37,3 +37,6 @@ class TestMethod(unittest.TestCase):
 
         assert_file_hash(self, expected_hash, existing_file, has_changed=True)
         self.assertTrue(Path(self.base / 'objects' / 'objects2.con').exists())
+
+if __name__ == '__main__':
+    unittest.main()

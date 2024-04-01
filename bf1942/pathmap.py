@@ -9,7 +9,7 @@ PATHMAP_TYPES = [
     'Tank0Level0Map',
     'Infantry1Level0Map',
     'Boat2Level2Map',
-    'LandingCraft3Level0Map',
+    'LandingCraft3Level2Map',
     'Car4Level0Map'
 ]
 
@@ -31,8 +31,11 @@ def genpathmaps(src, dst):
             convert_image(src_path, tmp_src_path)
             src_path = tmp_src_path
 
+        # TODO rename Boat2/LandingCraft3 level 2 maps to level 0 and vice-versa
+
         ret = subprocess.run([exe_path, '-v', *mode_switches, src_path, tmp], capture_output=True, text=True)
         if ret.returncode > 0:
+            eprint(ret.stdout)
             return False
 
         if dst_path.suffix == '.raw':

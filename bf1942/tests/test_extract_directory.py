@@ -26,3 +26,6 @@ class TestMethod(unittest.TestCase):
 
         self.assertTrue(Path(self.dst / 'Level1' / 'Level1.con').exists())
         self.assertTrue(Path(self.dst / 'Level2' / 'Level2.con').exists())
+
+if __name__ == '__main__':
+    unittest.main()
