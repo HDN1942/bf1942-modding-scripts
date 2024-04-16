@@ -24,6 +24,14 @@ class TestMethod(unittest.TestCase):
             'src/bar.con'
         ])
 
+    def test_dst_may_be_path_to_file(self):
+        pack_directory(str(self.src), str(self.base / 'dst.rfa'), False, self.base)
+
+        assert_rfa(self, self.base / 'dst.rfa', [
+            'src/foo.con',
+            'src/bar.con'
+        ])
+
     def test_skips_packing_if_file_exists(self):
         expected_hash = create_dummy_file(self.src_rfa)
 

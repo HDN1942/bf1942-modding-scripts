@@ -61,7 +61,7 @@ Positional arguments:
 
 * `destination_path`
 
-  Destination path for packed RFAs
+  Destination path for packed RFA(s). RFA file name will match final part of `source_path` if `destination_path` is a directory instead of a path to an RFA file.
 
 Options:
 * `-b`, `--base-path`
@@ -161,7 +161,7 @@ python3 -m unittest -b
 
 ## License
 
-Released under GPL-3.0 license unless specified otherwise in source file. 
+Released under GPL-3.0 license unless specified otherwise in source file.
 
 ## Credits
 

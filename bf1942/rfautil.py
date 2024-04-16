@@ -112,7 +112,7 @@ def pack_mod(src, dst, ovr):
     dst_path = Path(dst)
     bf1942_path = src_path / BF1942_DIRECTORY
     levels_path = bf1942_path / LEVELS_DIRECTORY
-    
+
     dst_path.mkdir(parents=True, exist_ok=True)
 
     for root, dirs, files in os.walk(src_path):
@@ -141,8 +141,13 @@ def pack_mod(src, dst, ovr):
 def pack_directory(src, dst, ovr, base):
     src_path = Path(src)
     dst_path = Path(dst)
-    rfa_name = f'{src_path.name}.rfa'
-    dst_item = dst_path / rfa_name
+
+    if dst_path.suffix == '.rfa':
+        rfa_name = dst_path.name
+        dst_item = dst_path
+    else:
+        rfa_name = f'{src_path.name}.rfa'
+        dst_item = dst_path / rfa_name
 
     if dst_item.exists() and ovr is False:
         print(f'pack: skip: {rfa_name}')

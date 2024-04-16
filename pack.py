@@ -10,7 +10,7 @@ E_INVALID_BASE_PATH = 100
 
 parser = argparse.ArgumentParser(description='Pack one or more directories into RFA archives')
 parser.add_argument('source_path', help='Source path to pack, assumed to be a single directory to pack unless the --mod option is specified, in which case each detected RFA will be packed')
-parser.add_argument('destination_path', help='Destination path for packed RFAs')
+parser.add_argument('destination_path', help='Destination path for packed RFA(s), RFA file name will match final part of `source_path` if `destination_path` is a directory instead of a path to an RFA file')
 parser.add_argument('-b', '--base-path', dest='base_path', help='Base path for RFA directory structure, default is parent of source_path, ignored when --mod option is used')
 parser.add_argument('-m', '--mod', action='store_true', default=False, help='source_path is an extracted mod with the standard directory structure, all detected RFAs will be packed')
 parser.add_argument('--overwrite', action='store_true', default=False, help='Overwrite any existing files in destination path, otherwise RFAs existing in the destination will be skipped')
