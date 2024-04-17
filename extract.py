@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import logging
 import os
 import sys
 from bf1942.path import path_join_insensitive
@@ -8,6 +9,8 @@ from bf1942.rfautil import *
 from bf1942.shell import *
 
 E_INVALID_ARCHIVE_OPTION = 100
+
+logging.basicConfig(level=logging.INFO)
 
 parser = argparse.ArgumentParser(description='Extract RFAs from a mod')
 parser.add_argument('source_path', help='Path to RFA file to extract or path to mod in Battlefield 1942 directory (ie. "c:\Games\Battlefield 1942\Mods\MyMod") if either --levels or --mod option is specified')

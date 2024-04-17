@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import logging
 import os
 import sys
 from PIL import Image
@@ -19,6 +20,8 @@ E_CONVERSION_ERROR = 100
 E_SAME_FORMAT = 101
 
 SUPPORTED_FORMATS = ['raw', 'bmp', 'png']
+
+logging.basicConfig(level=logging.INFO)
 
 parser = argparse.ArgumentParser(description='Convert pathmaps to/from various formats')
 parser.add_argument('source_path', help='Source directory containing files in the --in-format format')
@@ -50,13 +53,13 @@ for src_item in source_path.iterdir():
     dst_item = destination_path / f'{src_item.stem}.{args.out_format}'
 
     if dst_item.exists() and args.overwrite is False:
-        print(f'pathmap: skip: {dst_item.name}')
+        logger.info(f'pathmap: skip {dst_item.name}')
         continue
 
     if dst_item.exists():
-        print(f'pathmap: overwrite: {dst_item.name}')
+        logger.info(f'pathmap: overwrite {dst_item.name}')
     else:
-        print(f'pathmap: convert: {dst_item.name}')
+        logger.info(f'pathmap: convert {dst_item.name}')
 
     if convert_image(src_item, dst_item) is False:
         eprint(f'Error converting "{src_item}" to {args.out_format} format')

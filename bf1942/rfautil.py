@@ -1,9 +1,12 @@
+import logging
 import os
 import shutil
 import sys
 from pathlib import Path
 from bf1942.RFA import RefractorFlatArchive
 from bf1942.path import path_join_insensitive, path_equal_insensitive
+
+logger = logging.getLogger(__name__)
 
 ARCHIVES_DIRECTORY = 'archives'
 BF1942_DIRECTORY = 'bf1942'
@@ -58,14 +61,14 @@ def extract_rfa(src, dst, ovr):
     dst_path = Path(dst) / root
 
     if dst_path.exists() and ovr is False:
-        print(f'extract: skip: {item}')
+        logger.info(f'extract: skip {item}')
         return
 
     if dst_path.exists():
         shutil.rmtree(dst_path)
-        print(f'extract: overwrite: {root}')
+        logger.info(f'extract: overwrite {root}')
     else:
-        print(f'extract: process: {root}')
+        logger.info(f'extract: process {root}')
 
     # TODO could be problematic if there are casing differences between destination paths and stored paths
     rfa.extractAll(dst)
@@ -150,13 +153,13 @@ def pack_directory(src, dst, ovr, base):
         dst_item = dst_path / rfa_name
 
     if dst_item.exists() and ovr is False:
-        print(f'pack: skip: {rfa_name}')
+        logger.info(f'pack: skip {rfa_name}')
         return
 
     if dst_item.exists():
-        print(f'pack: overwrite: {rfa_name}')
+        logger.info(f'pack: overwrite {rfa_name}')
     else:
-        print(f'pack: process: {rfa_name}')
+        logger.info(f'pack: process {rfa_name}')
 
     rfa = RefractorFlatArchive(src_path)
     rfa.addDirectory(src_path, str(base))

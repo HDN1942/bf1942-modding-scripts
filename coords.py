@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import logging
 import sys
 from bf1942.shell import *
 
@@ -18,6 +19,8 @@ def calc_points(x1, y1, x2, y2):
 E_MISSING_X2_COORD = 81
 E_MISSING_Y2_COORD = 82
 E_MISSING_SIZE = 83
+
+logging.basicConfig(level=logging.INFO)
 
 parser = argparse.ArgumentParser(description='Calculate strategic area coordinates for either a pair of real map coordinates or a center point and size')
 parser.add_argument('mode', choices=['points', 'center'], help='Mode is either points or center')

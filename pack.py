@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
 import argparse
+import logging
 import os
 import sys
 from bf1942.rfautil import *
 from bf1942.shell import *
 
 E_INVALID_BASE_PATH = 100
+
+logging.basicConfig(level=logging.INFO)
 
 parser = argparse.ArgumentParser(description='Pack one or more directories into RFA archives')
 parser.add_argument('source_path', help='Source path to pack, assumed to be a single directory to pack unless the --mod option is specified, in which case each detected RFA will be packed')
