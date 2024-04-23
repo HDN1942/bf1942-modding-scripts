@@ -14,6 +14,65 @@ class PathmapHeaderTest(unittest.TestCase):
         self.assertEqual(5, pm.isInfo)
         self.assertEqual(6, pm.dataOffset)
 
+    def test_derived(self):
+        # 2048 level 0 map
+        pm = PathmapHeader((5, 5, 6, 0, 0, 2))
+
+        self.assertEqual(32, pm.tilesPerRow)
+        self.assertEqual(32, pm.tilesPerCol)
+        self.assertEqual(1024, pm.tiles)
+        self.assertEqual(64, pm.rowsPerTile)
+        self.assertEqual(8, pm.bytesPerRow)
+        self.assertEqual(512, pm.bytesPerTile)
+
+        # 2048 level 1 map
+        pm = PathmapHeader((4, 4, 7, 1, 0, 2))
+
+        self.assertEqual(16, pm.tilesPerRow)
+        self.assertEqual(16, pm.tilesPerCol)
+        self.assertEqual(256, pm.tiles)
+        self.assertEqual(64, pm.rowsPerTile)
+        self.assertEqual(8, pm.bytesPerRow)
+        self.assertEqual(512, pm.bytesPerTile)
+
+        # 2048 info map
+        pm = PathmapHeader((5, 5, 6, 1, 1, 2))
+        self.assertEqual(32, pm.tilesPerRow)
+        self.assertEqual(32, pm.tilesPerCol)
+        self.assertEqual(1024, pm.tiles)
+        self.assertEqual(32, pm.rowsPerTile)
+        self.assertEqual(8, pm.bytesPerRow)
+        self.assertEqual(256, pm.bytesPerTile)
+
+        # 4096 level 0 map
+        pm = PathmapHeader((6, 6, 6, 0, 0, 2))
+
+        self.assertEqual(64, pm.tilesPerRow)
+        self.assertEqual(64, pm.tilesPerCol)
+        self.assertEqual(4096, pm.tiles)
+        self.assertEqual(64, pm.rowsPerTile)
+        self.assertEqual(8, pm.bytesPerRow)
+        self.assertEqual(512, pm.bytesPerTile)
+
+        # 4096 level 2 map
+        pm = PathmapHeader((4, 4, 8, 2, 0, 2))
+
+        self.assertEqual(16, pm.tilesPerRow)
+        self.assertEqual(16, pm.tilesPerCol)
+        self.assertEqual(256, pm.tiles)
+        self.assertEqual(64, pm.rowsPerTile)
+        self.assertEqual(8, pm.bytesPerRow)
+        self.assertEqual(512, pm.bytesPerTile)
+
+        # 4096 info map
+        pm = PathmapHeader((6, 6, 6, 1, 1, 2))
+        self.assertEqual(64, pm.tilesPerRow)
+        self.assertEqual(64, pm.tilesPerCol)
+        self.assertEqual(4096, pm.tiles)
+        self.assertEqual(32, pm.rowsPerTile)
+        self.assertEqual(8, pm.bytesPerRow)
+        self.assertEqual(256, pm.bytesPerTile)
+
     def test_from_file(self):
         data = pack(PathmapHeader.HEADER_FORMAT, 1, 2, 3, 4, 5, 6)
         file = io.BytesIO(data)
