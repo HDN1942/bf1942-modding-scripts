@@ -6,8 +6,14 @@
 # Original source for genpathmaps is available here:
 # https://github.com/HDN1942/genpathmaps
 
-from struct import calcsize, unpack
 from pathlib import Path
+from struct import calcsize, unpack
+from PIL import Image, ImageDraw
+
+TILE_SIZE = 64
+
+COLOR_DOGO = 0
+COLOR_NOGO = 255
 
 class PathmapHeader:
     '''Header for a raw pathmap file.'''
@@ -138,3 +144,52 @@ def load_pathmap(source_file):
             raise ValueError('Invalid data length')
 
     return (header, tiles)
+
+def pathmap_to_image(source_file):
+    '''Convert a raw pathmap level 0 file to an image.'''
+
+    header, tiles = load_pathmap(source_file)
+
+    if header.compression_level > 0:
+        raise ValueError('Pathmap is not a level 0 map')
+
+    if header.is_info:
+        raise ValueError('Pathmap is an info map')
+
+    image = Image.new('1', (header.tile_count * 2, header.tile_count * 2))
+    draw = ImageDraw.Draw(image)
+
+    for row in range(header.tiles_per_row):
+        for column in range(header.tiles_per_column):
+            index = row * header.tiles_per_column + column
+            tile = tiles[index]
+
+            x1 = column * TILE_SIZE
+            y1 = row * TILE_SIZE
+            x2 = x1 + TILE_SIZE
+            y2 = y1 + TILE_SIZE
+
+            if tile.flag == PathmapTile.FLAG_DOGO:
+                # DOGO is black, the default color
+                pass
+            elif tile.flag == PathmapTile.FLAG_NOGO:
+                draw.rectangle([x1, y1, x2, y2], fill=COLOR_NOGO)
+            else:
+                draw_mixed(image, header, tile.data, x1, y1)
+
+    return image.transpose(Image.FLIP_TOP_BOTTOM)
+
+def draw_mixed(image, header, data, x, y):
+    for tile_row in range(header.rows_per_tile):
+        for row_byte in range(header.bytes_per_row):
+            for bit in range(8):
+                byte_index = tile_row * header.bytes_per_row + row_byte
+                dogo = data[byte_index] & 1 << bit == 0
+                if dogo:
+                    # DOGO is black, the default color
+                    continue
+
+                pixel_x = x + row_byte * 8 + bit
+                pixel_y = y + tile_row
+
+                image.putpixel((pixel_x, pixel_y), COLOR_NOGO)

@@ -6,6 +6,8 @@ from pathlib import Path
 TILE_SIZE = 256
 
 def textures_to_image(source_directory):
+    '''Convert a directory containing DDS textures to an image.'''
+
     assert source_directory is not None
 
     src_path = Path(source_directory)

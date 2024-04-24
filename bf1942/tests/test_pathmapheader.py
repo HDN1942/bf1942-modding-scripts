@@ -91,7 +91,7 @@ class PathmapHeaderTest(unittest.TestCase):
         pm = PathmapHeader((5, 5, 6, 0, 0, 2))
         self.assertTrue(pm.is_valid())
 
-        # invalid ln2TilesPerRow/ln2TilesPerCol
+        # invalid ln2_tiles_per_row/ln2_tiles_per_column
         pm = PathmapHeader((5, 4, 6, 0, 0, 2))
         self.assertFalse(pm.is_valid())
 
@@ -101,21 +101,21 @@ class PathmapHeaderTest(unittest.TestCase):
         pm = PathmapHeader((9, 9, 6, 0, 0, 2))
         self.assertFalse(pm.is_valid())
 
-        # invalid ln2TileRes
+        # invalid ln2_tile_resolution
         pm = PathmapHeader((5, 5, 5, 0, 0, 2))
         self.assertFalse(pm.is_valid())
 
         pm = PathmapHeader((5, 5, 13, 0, 0, 2))
         self.assertFalse(pm.is_valid())
 
-        # invalid isInfo
+        # invalid is_info
         pm = PathmapHeader((5, 5, 6, 0, -1, 2))
         self.assertFalse(pm.is_valid())
 
         pm = PathmapHeader((5, 5, 6, 0, 2, 2))
         self.assertFalse(pm.is_valid())
 
-        # invalid dataOffset
+        # invalid data_offset
         pm = PathmapHeader((5, 5, 6, 0, 0, 1))
         self.assertFalse(pm.is_valid())
 
