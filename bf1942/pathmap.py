@@ -6,14 +6,17 @@
 # Original source for genpathmaps is available here:
 # https://github.com/HDN1942/genpathmaps
 
+import math
+import struct
 from pathlib import Path
-from struct import calcsize, unpack
 from PIL import Image, ImageDraw
 
 TILE_SIZE = 64
 
 COLOR_DOGO = 0
 COLOR_NOGO = 255
+
+LEVEL0_RESOLUTION = 6
 
 class PathmapHeader:
     '''Header for a raw pathmap file.'''
@@ -80,13 +83,43 @@ class PathmapHeader:
         self.bytes_per_row = self.rows_per_tile >> 3 - self.is_info
         self.bytes_per_tile = self.rows_per_tile * self.bytes_per_row
 
+    def write(self, file):
+        packed_header = struct.pack(self.HEADER_FORMAT,
+            self.ln2_tiles_per_row,
+            self.ln2_tiles_per_column,
+            self.ln2_tile_resolution,
+            self.compression_level,
+            self.is_info,
+            self.data_offset
+        )
+        file.write(packed_header)
+
+        if self.data_offset == 2:
+            file.write(bytes([0, 0, 0, 0, 0xff, 0xff, 0xff, 0xff]))
+
     @classmethod
     def from_file(cls, file):
         '''Read header from a file.'''
 
-        header_bytes = file.read(calcsize(cls.HEADER_FORMAT))
-        header_data = unpack(cls.HEADER_FORMAT, header_bytes)
+        header_bytes = file.read(struct.calcsize(cls.HEADER_FORMAT))
+        header_data = struct.unpack(cls.HEADER_FORMAT, header_bytes)
         return PathmapHeader(header_data)
+
+    @classmethod
+    def from_image(cls, image, level=0):
+        '''Create a header from an image.'''
+
+        if image.width != image.height:
+            raise ValueError('Image must be square')
+
+        if image.width % 8 > 0:
+            raise ValueError('Image must be evenly divisible by 8')
+
+        resolution = LEVEL0_RESOLUTION + level
+        tiles = image.width >> resolution
+        ln2_tiles = int(tiles - 1).bit_length()
+
+        return PathmapHeader((ln2_tiles, ln2_tiles, resolution, level, 0, 2))
 
 class PathmapTile:
     '''Represents a tile within a raw pathmap file.'''
@@ -102,6 +135,12 @@ class PathmapTile:
         self.data = data
         '''Tile data, size is determined by bytes_per_tile attribute of PathmapHeader, only set when flag is FLAG_MIXED.'''
 
+    def write(self, file):
+        file.write(int(self.flag).to_bytes(4, 'little', signed=True))
+
+        if self.flag == self.FLAG_MIXED:
+            file.write(bytes(self.data))
+
     @classmethod
     def from_file(cls, file, bytes_per_tile):
         '''Read tile data from a file.'''
@@ -114,55 +153,117 @@ class PathmapTile:
         if flag == cls.FLAG_MIXED:
             data = file.read(bytes_per_tile)
             if len(data) < bytes_per_tile:
-                raise ValueError('Invalid tile data length')
+                raise ValueError(f'Invalid tile data length: {len(data)}')
 
             return PathmapTile(flag, data)
         else:
             return PathmapTile(flag)
 
-def load_pathmap(source_file):
-    '''Load a raw pathmap file.'''
+    @classmethod
+    def from_data(cls, data):
+        '''Create tile from a list of ints.'''
 
-    src_path = Path(source_file)
+        assert len(data) > 0
+        assert len(data) % 8 == 0, 'Expected data to be a multiple of 8'
 
-    assert src_path.is_file()
+        if not all_same(data):
+            return PathmapTile(cls.FLAG_MIXED, pack_data(data))
+        else:
+            flag = cls.FLAG_NOGO if data[0] == 1 else cls.FLAG_DOGO
+            return PathmapTile(flag)
 
-    with open(src_path, 'rb') as file:
-        header = PathmapHeader.from_file(file)
+def all_same(items):
+    assert items is not None
+    assert hasattr(items, '__len__')
 
-        if not header.is_valid():
-            raise ValueError('Invalid header')
+    if len(items) == 0:
+        return True
 
-        file.seek(header.data_offset * 4, 1)
+    return len(set(items)) == 1
 
-        tiles = []
-        for _ in range(header.tile_count):
-            tiles.append(PathmapTile.from_file(file, header.bytes_per_tile))
+def pack_data(data):
+    if not all(x >= 0 and x <= 1 for x in data):
+        raise ValueError(f'Invalid data, values must be 0 or 1')
 
-        # check we're at EOF
-        if file.read(1) != b'':
-            raise ValueError('Invalid data length')
+    packed_data = []
+    bit = 0
+    byte = 0
 
-    return (header, tiles)
+    for go in data:
+        byte |= go << bit
+
+        if bit == 7:
+            packed_data.append(byte)
+            bit = 0
+            byte = 0
+        else:
+            bit += 1
+
+    # data length not a multiple of 8, weird, but that's ok
+    if bit > 0:
+        packed_data.append(byte)
+
+    return packed_data
+
+class Pathmap:
+    '''A raw pathmap.'''
+
+    def __init__(self, header, tiles):
+        self.header = header
+        self.tiles = tiles
+
+    def save(self, destination_file):
+        '''Save a raw pathmap file.'''
+
+        with open(destination_file, 'wb') as file:
+            self.header.write(file)
+            for tile in self.tiles:
+                tile.write(file)
+
+    @classmethod
+    def load(cls, source_file):
+        '''Load a raw pathmap file.'''
+
+        src_path = Path(source_file)
+
+        assert src_path.is_file()
+
+        with open(src_path, 'rb') as file:
+            header = PathmapHeader.from_file(file)
+
+            if not header.is_valid():
+                raise ValueError('Invalid header')
+
+            file.seek(header.data_offset * 4, 1)
+
+            tiles = []
+            for _ in range(header.tile_count):
+                tiles.append(PathmapTile.from_file(file, header.bytes_per_tile))
+
+            # check we're at EOF
+            if file.read(1) != b'':
+                raise ValueError('Invalid data length')
+
+        return Pathmap(header, tiles)
 
 def pathmap_to_image(source_file):
     '''Convert a raw pathmap level 0 file to an image.'''
 
-    header, tiles = load_pathmap(source_file)
+    pathmap = Pathmap.load(source_file)
 
-    if header.compression_level > 0:
+    if pathmap.header.compression_level > 0:
         raise ValueError('Pathmap is not a level 0 map')
 
-    if header.is_info:
+    if pathmap.header.is_info:
         raise ValueError('Pathmap is an info map')
 
-    image = Image.new('1', (header.tile_count * 2, header.tile_count * 2))
+    image = Image.new('1', (pathmap.header.tile_count * 2, pathmap.header.tile_count * 2))
     draw = ImageDraw.Draw(image)
 
-    for row in range(header.tiles_per_row):
-        for column in range(header.tiles_per_column):
-            index = row * header.tiles_per_column + column
-            tile = tiles[index]
+    for row in range(pathmap.header.tiles_per_row):
+        for column in range(pathmap.header.tiles_per_column):
+            index = row * pathmap.header.tiles_per_column + column
+            tile = pathmap.tiles[index]
 
             x1 = column * TILE_SIZE
             y1 = row * TILE_SIZE
@@ -175,7 +276,7 @@ def pathmap_to_image(source_file):
             elif tile.flag == PathmapTile.FLAG_NOGO:
                 draw.rectangle([x1, y1, x2, y2], fill=COLOR_NOGO)
             else:
-                draw_mixed(image, header, tile.data, x1, y1)
+                draw_mixed(image, pathmap.header, tile.data, x1, y1)
 
     return image.transpose(Image.FLIP_TOP_BOTTOM)
 
@@ -193,3 +294,34 @@ def draw_mixed(image, header, data, x, y):
                 pixel_y = y + tile_row
 
                 image.putpixel((pixel_x, pixel_y), COLOR_NOGO)
+
+def image_to_pathmap(source_file):
+    src_path = Path(source_file)
+
+    assert src_path.is_file()
+
+    with Image.open(src_path) as image:
+        header = PathmapHeader.from_image(image)
+
+        i = 0
+        raw_tiles = [[] for _ in range(header.tile_count)]
+
+        pixels_per_row = image.width
+
+        for pixel in image.transpose(Image.FLIP_TOP_BOTTOM).getdata():
+            pixel_row = math.floor(i / pixels_per_row)
+            tile_row = math.floor(pixel_row / TILE_SIZE)
+            tile_column = math.floor((i - pixel_row * pixels_per_row) / TILE_SIZE)
+
+            tile_index = tile_row * header.tiles_per_row + tile_column
+
+            value = 1 if pixel > 0 else 0
+            raw_tiles[tile_index].append(value)
+
+            i += 1
+
+    assert all(len(t) / 8 == header.bytes_per_tile for t in raw_tiles)
+
+    tiles = [PathmapTile.from_data(t) for t in raw_tiles]
+
+    return Pathmap(header, tiles)
