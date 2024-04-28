@@ -62,6 +62,12 @@ class PathmapHeader:
         self.bytes_per_tile = None
         '''Number of bytes per tile.'''
 
+        self.map_width = None
+        '''Width of map, same as image width when converting pathmap to image.'''
+
+        self.map_height = None
+        '''Height of map, same as image height when converting pathmap to image.'''
+
         if self.is_valid():
             self._compute_derived()
 
@@ -82,6 +88,8 @@ class PathmapHeader:
         self.rows_per_tile = 1 << self.ln2_tile_resolution - self.compression_level
         self.bytes_per_row = self.rows_per_tile >> 3 - self.is_info
         self.bytes_per_tile = self.rows_per_tile * self.bytes_per_row
+        self.map_width = self.tiles_per_column * self.rows_per_tile
+        self.map_height = self.tiles_per_row * self.rows_per_tile
 
     def write(self, file):
         packed_header = struct.pack(self.HEADER_FORMAT,
@@ -257,7 +265,7 @@ def pathmap_to_image(source_file):
     if pathmap.header.is_info:
         raise ValueError('Pathmap is an info map')
 
-    image = Image.new('1', (pathmap.header.tile_count * 2, pathmap.header.tile_count * 2))
+    image = Image.new('1', (pathmap.header.map_width, pathmap.header.map_height))
     draw = ImageDraw.Draw(image)
 
     for row in range(pathmap.header.tiles_per_row):
@@ -267,8 +275,8 @@ def pathmap_to_image(source_file):
 
             x1 = column * TILE_SIZE
             y1 = row * TILE_SIZE
-            x2 = x1 + TILE_SIZE
-            y2 = y1 + TILE_SIZE
+            x2 = x1 + TILE_SIZE - 1
+            y2 = y1 + TILE_SIZE - 1
 
             if tile.flag == PathmapTile.FLAG_DOGO:
                 # DOGO is black, the default color

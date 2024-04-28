@@ -124,6 +124,24 @@ class PathmapHeaderTest(unittest.TestCase):
         self.assertFalse(pm.is_valid())
 
     def test_from_image(self):
+        image = Image.new('1', (1024, 1024))
+        pm = PathmapHeader.from_image(image)
+
+        self.assertEqual(4, pm.ln2_tiles_per_row)
+        self.assertEqual(4, pm.ln2_tiles_per_column)
+        self.assertEqual(6, pm.ln2_tile_resolution)
+        self.assertEqual(0, pm.compression_level)
+        self.assertEqual(0, pm.is_info)
+        self.assertEqual(2, pm.data_offset)
+        self.assertEqual(16, pm.tiles_per_row)
+        self.assertEqual(16, pm.tiles_per_column)
+        self.assertEqual(256, pm.tile_count)
+        self.assertEqual(64, pm.rows_per_tile)
+        self.assertEqual(8, pm.bytes_per_row)
+        self.assertEqual(512, pm.bytes_per_tile)
+        self.assertEqual(1024, pm.map_width)
+        self.assertEqual(1024, pm.map_height)
+
         image = Image.new('1', (2048, 2048))
         pm = PathmapHeader.from_image(image)
 
@@ -139,6 +157,8 @@ class PathmapHeaderTest(unittest.TestCase):
         self.assertEqual(64, pm.rows_per_tile)
         self.assertEqual(8, pm.bytes_per_row)
         self.assertEqual(512, pm.bytes_per_tile)
+        self.assertEqual(2048, pm.map_width)
+        self.assertEqual(2048, pm.map_height)
 
         image = Image.new('1', (4096, 4096))
         pm = PathmapHeader.from_image(image)
@@ -155,6 +175,8 @@ class PathmapHeaderTest(unittest.TestCase):
         self.assertEqual(64, pm.rows_per_tile)
         self.assertEqual(8, pm.bytes_per_row)
         self.assertEqual(512, pm.bytes_per_tile)
+        self.assertEqual(4096, pm.map_width)
+        self.assertEqual(4096, pm.map_height)
 
 if __name__ == '__main__':
     unittest.main()
