@@ -1,5 +1,5 @@
 import unittest
-from bf1942.pathmap import all_same
+from bf1942.pathmap.util import all_same
 
 class AllSameTest(unittest.TestCase):
     def test_all_same(self):

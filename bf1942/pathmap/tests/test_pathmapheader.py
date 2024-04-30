@@ -2,7 +2,7 @@ import io
 import unittest
 from struct import pack
 from PIL import Image
-from bf1942.pathmap import PathmapHeader
+from bf1942.pathmap.pathmap import PathmapHeader
 
 class PathmapHeaderTest(unittest.TestCase):
     def test_init(self):

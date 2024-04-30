@@ -1,6 +1,6 @@
 import unittest
 from io import BytesIO
-from bf1942.pathmap import PathmapTile
+from bf1942.pathmap.pathmap import PathmapTile
 
 class PathmapTileTest(unittest.TestCase):
 

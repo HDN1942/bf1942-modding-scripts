@@ -2,7 +2,7 @@ import unittest
 import bf1942.tests.util as testutil
 from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw
-from bf1942.pathmap import image_to_pathmap, pathmap_to_image
+from bf1942.pathmap.conversion import image_to_pathmap, pathmap_to_image
 
 class TestImageToPathmapRoundtrip(unittest.TestCase):
     def setUp(self):

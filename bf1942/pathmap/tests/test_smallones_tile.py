@@ -1,7 +1,7 @@
 import unittest
 from io import BytesIO
 from struct import pack
-from bf1942.pathmap import SmallonesTile
+from bf1942.pathmap.smallones import SmallonesTile
 
 class SmallonesTileTest(unittest.TestCase):
     def test_from_file(self):

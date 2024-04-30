@@ -1,5 +1,5 @@
 import unittest
-from bf1942.pathmap import pack_data
+from bf1942.pathmap.util import pack_data
 
 class PackDataTest(unittest.TestCase):
     def test_pack_single_byte(self):
