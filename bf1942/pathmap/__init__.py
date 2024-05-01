@@ -6,3 +6,6 @@
 # Original source for genpathmaps is available here:
 # https://github.com/HDN1942/genpathmaps
 
+from .pathmap import Pathmap
+from .smallones import Smallones
+from .conversion import pathmap_to_image, image_to_pathmap, generate_smallones

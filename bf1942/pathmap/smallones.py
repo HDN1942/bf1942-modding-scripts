@@ -8,6 +8,9 @@ class SmallonesHeader:
         self.tile_length = data[0]
         '''Number of tiles across x/y axises.'''
 
+        self.tile_total = self.tile_length * self.tile_length
+        '''Total number of tiles.'''
+
     def write(self, file):
         file.write(int(self.tile_length).to_bytes(4, 'little'))
         file.write(int(self.tile_length).to_bytes(4, 'little'))
@@ -75,3 +78,54 @@ class SmallonesTile:
         tile_bytes = file.read(struct.calcsize(cls.TILE_FORMAT))
         tile_data = struct.unpack(cls.TILE_FORMAT, tile_bytes)
         return SmallonesTile(tile_data)
+
+class Smallones:
+    '''A smallones map.'''
+
+    def __init__(self, header, tiles):
+        assert header.tile_total > 0
+        assert len(tiles) == header.tile_total
+
+        self.header = header
+        self.tiles = tiles
+
+    def save(self, destination_file):
+        '''Save a smallones map file.'''
+
+        with open(destination_file, 'wb') as file:
+            self.header.write(file)
+            for tile in self.tiles:
+                tile.write(file)
+
+    @classmethod
+    def new(cls, tile_length):
+        '''Create a blank smallones map.'''
+
+        header = SmallonesHeader([tile_length, tile_length])
+
+        tiles = []
+        for _ in range(header.tile_total):
+            tiles.append(SmallonesTile([0 for _ in range(14)]))
+
+        return Smallones(header, tiles)
+
+    @classmethod
+    def load(cls, source_file):
+        '''Load a smallones map file.'''
+
+        src_path = Path(source_file)
+
+        assert src_path.is_file()
+
+        with open(src_path, 'rb') as file:
+            header = SmallonesHeader.from_file(file)
+
+            tiles = []
+            for _ in range(header.tile_total):
+                tiles.append(SmallonesTile.from_file(file))
+
+            # check we're at EOF
+            if file.read(1) != b'':
+                raise ValueError('Invalid data length')
+
+        return Smallones(header, tiles)
