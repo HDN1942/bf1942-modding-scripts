@@ -2,15 +2,15 @@ import struct
 
 class SmallonesHeader:
     def __init__(self, data):
-        self.tiles_per_row = data[0]
-        '''Number of tiles per row.'''
+        assert len(data) == 2
+        assert data[0] == data[1]
 
-        self.tiles_per_column = data[1]
-        '''Number of tiles per column.'''
+        self.tile_length = data[0]
+        '''Number of tiles across x/y axises.'''
 
     def write(self, file):
-        file.write(int(self.tiles_per_row).to_bytes(4, 'little'))
-        file.write(int(self.tiles_per_column).to_bytes(4, 'little'))
+        file.write(int(self.tile_length).to_bytes(4, 'little'))
+        file.write(int(self.tile_length).to_bytes(4, 'little'))
 
     @classmethod
     def from_file(cls, file):
@@ -26,6 +26,8 @@ class SmallonesTile:
     TILE_FORMAT = '=HHBBBBBBBBBBBB'
 
     def __init__(self, data):
+        assert len(data) == 14
+
         self.has_lower = data[0]
         '''Smallone has a lower neighbor?'''
 

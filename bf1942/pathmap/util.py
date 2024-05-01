@@ -20,8 +20,8 @@ def pack_data(data):
     bit = 0
     byte = 0
 
-    for go in data:
-        byte |= go << bit
+    for value in data:
+        byte |= value << bit
 
         if bit == 7:
             packed_data.append(byte)
@@ -35,3 +35,15 @@ def pack_data(data):
         packed_data.append(byte)
 
     return packed_data
+
+def unpack_data(data):
+    '''Unpack a sequence of bytes into a list of 0's and 1's.'''
+
+    unpacked_data = []
+
+    for byte in data:
+        for bit in range(8):
+            value = 1 if byte & 1 << bit > 0 else 0
+            unpacked_data.append(value)
+
+    return unpacked_data

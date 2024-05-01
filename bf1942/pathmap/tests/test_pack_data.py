@@ -61,13 +61,13 @@ class PackDataTest(unittest.TestCase):
             pack_data(1)
 
         with self.assertRaises(TypeError):
-            packed = pack_data("foobar")
+            pack_data("foobar")
 
         with self.assertRaises(TypeError):
-            packed = pack_data([0.1])
+            pack_data([0.1])
 
         with self.assertRaises(ValueError, msg='Invalid data, values must be 0 or 1'):
-            packed = pack_data([0, 1, 0, 4, 0, 1, 0, 0])
+            pack_data([0, 1, 0, 4, 0, 1, 0, 0])
 
 if __name__ == '__main__':
     unittest.main()

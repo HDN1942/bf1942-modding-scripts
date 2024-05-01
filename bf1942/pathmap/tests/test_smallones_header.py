@@ -9,8 +9,7 @@ class SmallonesHeaderTest(unittest.TestCase):
 
         header = SmallonesHeader.from_file(file)
 
-        self.assertEqual(32, header.tiles_per_row)
-        self.assertEqual(32, header.tiles_per_column)
+        self.assertEqual(32, header.tile_length)
 
     def test_write(self):
         data = [32, 32]

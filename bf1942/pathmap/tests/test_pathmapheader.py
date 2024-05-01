@@ -1,7 +1,6 @@
 import io
 import unittest
 from struct import pack
-from PIL import Image
 from bf1942.pathmap.pathmap import PathmapHeader
 
 class PathmapHeaderTest(unittest.TestCase):
@@ -19,60 +18,60 @@ class PathmapHeaderTest(unittest.TestCase):
         # 2048 level 0 map
         pm = PathmapHeader((5, 5, 6, 0, 0, 2))
 
-        self.assertEqual(32, pm.tiles_per_row)
-        self.assertEqual(32, pm.tiles_per_column)
-        self.assertEqual(1024, pm.tile_count)
-        self.assertEqual(64, pm.rows_per_tile)
-        self.assertEqual(8, pm.bytes_per_row)
-        self.assertEqual(512, pm.bytes_per_tile)
+        self.assertEqual(32, pm.tile_length)
+        self.assertEqual(1024, pm.tile_total)
+        self.assertEqual(64, pm.tile_size)
+        self.assertEqual(512, pm.tile_packed_size)
+        self.assertEqual(2048, pm.map_width)
+        self.assertEqual(2048, pm.map_height)
 
         # 2048 level 1 map
         pm = PathmapHeader((4, 4, 7, 1, 0, 2))
 
-        self.assertEqual(16, pm.tiles_per_row)
-        self.assertEqual(16, pm.tiles_per_column)
-        self.assertEqual(256, pm.tile_count)
-        self.assertEqual(64, pm.rows_per_tile)
-        self.assertEqual(8, pm.bytes_per_row)
-        self.assertEqual(512, pm.bytes_per_tile)
+        self.assertEqual(16, pm.tile_length)
+        self.assertEqual(256, pm.tile_total)
+        self.assertEqual(64, pm.tile_size)
+        self.assertEqual(512, pm.tile_packed_size)
+        self.assertEqual(2048, pm.map_width)
+        self.assertEqual(2048, pm.map_height)
 
         # 2048 info map
         pm = PathmapHeader((5, 5, 6, 1, 1, 2))
-        self.assertEqual(32, pm.tiles_per_row)
-        self.assertEqual(32, pm.tiles_per_column)
-        self.assertEqual(1024, pm.tile_count)
-        self.assertEqual(32, pm.rows_per_tile)
-        self.assertEqual(8, pm.bytes_per_row)
-        self.assertEqual(256, pm.bytes_per_tile)
+        self.assertEqual(32, pm.tile_length)
+        self.assertEqual(1024, pm.tile_total)
+        self.assertEqual(32, pm.tile_size)
+        self.assertEqual(256, pm.tile_packed_size)
+        self.assertEqual(2048, pm.map_width)
+        self.assertEqual(2048, pm.map_height)
 
         # 4096 level 0 map
         pm = PathmapHeader((6, 6, 6, 0, 0, 2))
 
-        self.assertEqual(64, pm.tiles_per_row)
-        self.assertEqual(64, pm.tiles_per_column)
-        self.assertEqual(4096, pm.tile_count)
-        self.assertEqual(64, pm.rows_per_tile)
-        self.assertEqual(8, pm.bytes_per_row)
-        self.assertEqual(512, pm.bytes_per_tile)
+        self.assertEqual(64, pm.tile_length)
+        self.assertEqual(4096, pm.tile_total)
+        self.assertEqual(64, pm.tile_size)
+        self.assertEqual(512, pm.tile_packed_size)
+        self.assertEqual(4096, pm.map_width)
+        self.assertEqual(4096, pm.map_height)
 
         # 4096 level 2 map
         pm = PathmapHeader((4, 4, 8, 2, 0, 2))
 
-        self.assertEqual(16, pm.tiles_per_row)
-        self.assertEqual(16, pm.tiles_per_column)
-        self.assertEqual(256, pm.tile_count)
-        self.assertEqual(64, pm.rows_per_tile)
-        self.assertEqual(8, pm.bytes_per_row)
-        self.assertEqual(512, pm.bytes_per_tile)
+        self.assertEqual(16, pm.tile_length)
+        self.assertEqual(256, pm.tile_total)
+        self.assertEqual(64, pm.tile_size)
+        self.assertEqual(512, pm.tile_packed_size)
+        self.assertEqual(4096, pm.map_width)
+        self.assertEqual(4096, pm.map_height)
 
         # 4096 info map
         pm = PathmapHeader((6, 6, 6, 1, 1, 2))
-        self.assertEqual(64, pm.tiles_per_row)
-        self.assertEqual(64, pm.tiles_per_column)
-        self.assertEqual(4096, pm.tile_count)
-        self.assertEqual(32, pm.rows_per_tile)
-        self.assertEqual(8, pm.bytes_per_row)
-        self.assertEqual(256, pm.bytes_per_tile)
+        self.assertEqual(64, pm.tile_length)
+        self.assertEqual(4096, pm.tile_total)
+        self.assertEqual(32, pm.tile_size)
+        self.assertEqual(256, pm.tile_packed_size)
+        self.assertEqual(4096, pm.map_width)
+        self.assertEqual(4096, pm.map_height)
 
     def test_from_file(self):
         data = pack(PathmapHeader.HEADER_FORMAT, 1, 2, 3, 4, 5, 6)
@@ -122,61 +121,6 @@ class PathmapHeaderTest(unittest.TestCase):
 
         pm = PathmapHeader((5, 5, 6, 0, 0, 3))
         self.assertFalse(pm.is_valid())
-
-    def test_from_image(self):
-        image = Image.new('1', (1024, 1024))
-        pm = PathmapHeader.from_image(image)
-
-        self.assertEqual(4, pm.ln2_tiles_per_row)
-        self.assertEqual(4, pm.ln2_tiles_per_column)
-        self.assertEqual(6, pm.ln2_tile_resolution)
-        self.assertEqual(0, pm.compression_level)
-        self.assertEqual(0, pm.is_info)
-        self.assertEqual(2, pm.data_offset)
-        self.assertEqual(16, pm.tiles_per_row)
-        self.assertEqual(16, pm.tiles_per_column)
-        self.assertEqual(256, pm.tile_count)
-        self.assertEqual(64, pm.rows_per_tile)
-        self.assertEqual(8, pm.bytes_per_row)
-        self.assertEqual(512, pm.bytes_per_tile)
-        self.assertEqual(1024, pm.map_width)
-        self.assertEqual(1024, pm.map_height)
-
-        image = Image.new('1', (2048, 2048))
-        pm = PathmapHeader.from_image(image)
-
-        self.assertEqual(5, pm.ln2_tiles_per_row)
-        self.assertEqual(5, pm.ln2_tiles_per_column)
-        self.assertEqual(6, pm.ln2_tile_resolution)
-        self.assertEqual(0, pm.compression_level)
-        self.assertEqual(0, pm.is_info)
-        self.assertEqual(2, pm.data_offset)
-        self.assertEqual(32, pm.tiles_per_row)
-        self.assertEqual(32, pm.tiles_per_column)
-        self.assertEqual(1024, pm.tile_count)
-        self.assertEqual(64, pm.rows_per_tile)
-        self.assertEqual(8, pm.bytes_per_row)
-        self.assertEqual(512, pm.bytes_per_tile)
-        self.assertEqual(2048, pm.map_width)
-        self.assertEqual(2048, pm.map_height)
-
-        image = Image.new('1', (4096, 4096))
-        pm = PathmapHeader.from_image(image)
-
-        self.assertEqual(6, pm.ln2_tiles_per_row)
-        self.assertEqual(6, pm.ln2_tiles_per_column)
-        self.assertEqual(6, pm.ln2_tile_resolution)
-        self.assertEqual(0, pm.compression_level)
-        self.assertEqual(0, pm.is_info)
-        self.assertEqual(2, pm.data_offset)
-        self.assertEqual(64, pm.tiles_per_row)
-        self.assertEqual(64, pm.tiles_per_column)
-        self.assertEqual(4096, pm.tile_count)
-        self.assertEqual(64, pm.rows_per_tile)
-        self.assertEqual(8, pm.bytes_per_row)
-        self.assertEqual(512, pm.bytes_per_tile)
-        self.assertEqual(4096, pm.map_width)
-        self.assertEqual(4096, pm.map_height)
 
 if __name__ == '__main__':
     unittest.main()
