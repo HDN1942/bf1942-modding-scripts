@@ -8,4 +8,4 @@
 
 from .pathmap import Pathmap
 from .smallones import Smallones
-from .conversion import pathmap_to_image, image_to_pathmap, generate_smallones
+from .conversion import pathmap_to_image, image_to_pathmap

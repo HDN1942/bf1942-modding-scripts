@@ -2,35 +2,11 @@ import math
 from pathlib import Path
 from PIL import Image, ImageDraw
 from bf1942.pathmap.pathmap import Pathmap, PathmapHeader, PathmapTile
-from bf1942.pathmap.smallones import Smallones
 
 COLOR_DOGO = 0
 COLOR_NOGO = 255
 
-LEVEL0_RESOLUTION = 6
-
-DEF_OFF = 48 # default offset? something binary?
-
-def generate_smallones(pathmap):
-    smallones = Smallones.new(pathmap.header.tile_length)
-
-    for y in range(smallones.header.tile_length):
-        for x in range(smallones.header.tile_length):
-            tile_index = y * smallones.header.tile_length + x
-            tile = pathmap.tiles[tile_index]
-
-            if tile.flag == tile.FLAG_NOGO:
-                # nothing to do, tile can't have a waypoint
-                pass
-            elif tile.flag == tile.FLAG_DOGO:
-                set_point(smallones, tile_index, 0, DEF_OFF, DEF_OFF)
-            else:
-                pass # findAreas
-
-    return smallones
-
-def set_point(smallones, offset, level, col, row):
-    pass
+LEVEL0_RESOLUTION = 6 # ln2 value, 64 in base 10
 
 def pathmap_to_image(source_file):
     '''Convert a raw pathmap level 0 file to an image.'''

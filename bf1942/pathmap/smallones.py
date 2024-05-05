@@ -4,6 +4,8 @@ class SmallonesHeader:
     def __init__(self, data):
         assert len(data) == 2
         assert data[0] == data[1]
+        assert data[0] > 0
+        assert data[0] % 8 == 0
 
         self.tile_length = data[0]
         '''Number of tiles across x/y axises.'''
@@ -31,6 +33,8 @@ class SmallonesTile:
     def __init__(self, data):
         assert len(data) == 14
 
+        # TODO assert active flag is valid
+
         self.has_lower = data[0]
         '''Smallone has a lower neighbor?'''
 
@@ -40,9 +44,20 @@ class SmallonesTile:
         self.pt = []
 
         for i in range(2, 10, 2):
-            self.pt.append((data[i], data[i + 1]))
+            self.pt.append([data[i], data[i + 1]])
 
+        # TODO define class constants for each flag level?
+        # LEVEL_INDEX_0, LEVEL_ACTIVE_0
+        # LEVEL_INDEX_1, LEVEL_ACTIVE_1
+        # level is appropriate name for this?
         self.active = data[10]
+        '''Flag set determining which pt level is marked as active.
+
+        16:  0
+        32:  1
+        64:  2
+        128: 3
+        '''
 
         self.unknown1 = data[11]
         '''Unknown field 1'''
@@ -98,18 +113,6 @@ class Smallones:
                 tile.write(file)
 
     @classmethod
-    def new(cls, tile_length):
-        '''Create a blank smallones map.'''
-
-        header = SmallonesHeader([tile_length, tile_length])
-
-        tiles = []
-        for _ in range(header.tile_total):
-            tiles.append(SmallonesTile([0 for _ in range(14)]))
-
-        return Smallones(header, tiles)
-
-    @classmethod
     def load(cls, source_file):
         '''Load a smallones map file.'''
 
@@ -127,5 +130,17 @@ class Smallones:
             # check we're at EOF
             if file.read(1) != b'':
                 raise ValueError('Invalid data length')
+
+        return Smallones(header, tiles)
+
+    @classmethod
+    def new(cls, tile_length):
+        '''Create a blank smallones map.'''
+
+        header = SmallonesHeader([tile_length, tile_length])
+
+        tiles = []
+        for _ in range(header.tile_total):
+            tiles.append(SmallonesTile([0 for _ in range(14)]))
 
         return Smallones(header, tiles)
