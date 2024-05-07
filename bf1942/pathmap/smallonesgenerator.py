@@ -1,5 +1,5 @@
 from .pathmap import PathmapTile
-from .smallones import Smallones
+from .smallones import Smallones, SmallonesTile
 
 class SmallonesGenerator:
     DEF_OFF = 48 # default offset? something binary?
@@ -8,12 +8,18 @@ class SmallonesGenerator:
         self._pathmap = pathmap
         self._tile_length = pathmap.header.tile_length
         self._tile_total = pathmap.header.tile_total
+        self._tile_size = pathmap.header.tile_size
         self._tiles = []
 
         self.smallones = Smallones.new(self._tile_length)
 
         self._setup()
         self._generate()
+
+    @classmethod
+    def generate(cls, pathmap):
+        generator = SmallonesGenerator(pathmap)
+        return generator.smallones
 
     def _setup(self):
         for i in range(self._tile_total):
@@ -58,17 +64,35 @@ class SmallonesGenerator:
                 else:
                     pass # findAreas
 
-    def _set_point(self, tile_index, level, x, y):
+    def _set_point(self, tile_index, waypoint_index, x, y):
         tile = self._tiles[tile_index]
 
         # set waypoint for this level and mark it as active
-        tile.activate(x, y, level)
+        tile.activate(x, y, waypoint_index)
 
-        if tile.above and tile.above.so.active:
-            pass
+        if tile.above and tile.above.active:
+            for i in range(SmallonesTile.WAYPOINT_COUNT):
+                is_connected = False
 
-        if tile.before and tile.before.so.active:
-            pass
+                for top_y in range(self._tile_size):
+                    bottom_y = self._tile_size * (self._tile_size - 1) + top_y
+                    if tile.pm.data[top_y] and tile.above.pm.data[bottom_y]:
+                        is_connected = True
+                        break
+
+                tile.above.so.waypoints[i].connected_bottom[waypoint_index] = is_connected
+
+        if tile.before and tile.before.active:
+            for i in range(SmallonesTile.WAYPOINT_COUNT):
+                is_connected = False
+
+                for right_x in range(0, self._tile_size * self._tile_size, self._tile_size):
+                    left_x = right_x + self._tile_size - 1
+                    if tile.pm.data[right_x] and tile.before.pm.data[left_x]:
+                        is_connected = True
+                        break
+
+                tile.before.so.waypoints[i].connected_right[waypoint_index] = is_connected
 
 class SmallonesGeneratorTile:
     def __init__(self, generator, index):
@@ -78,8 +102,14 @@ class SmallonesGeneratorTile:
         self.pm = self.generator._pathmap.tiles[index]
         self.above = None
         self.before = None
+        self.active = False
 
-    def activate(self, x, y, level):
-        self.so.pt[level][0] = x
-        self.so.pt[level][1] = y
-        self.so.active |= 1 << 4 + level
+    def activate(self, x, y, waypoint_index):
+        wp = self.so.waypoints[waypoint_index]
+        wp.x = x
+        wp.y = y
+        wp.active = True
+        self.active = True
+
+def generate_smallones(pathmap):
+    return SmallonesGenerator.generate(pathmap)

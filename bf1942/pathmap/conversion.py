@@ -48,9 +48,8 @@ def draw_mixed(image, data, x, y, tile_size):
         for tile_x in range(tile_size):
             index = tile_y * tile_size + tile_x
 
-            # DOGO is black, the default color
-            dogo = data[index] == 0
-            if dogo:
+            # DOGO (True) is black, the default color
+            if data[index]:
                 continue
 
             pixel_x = x + tile_x

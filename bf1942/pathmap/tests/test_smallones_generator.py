@@ -5,7 +5,7 @@ from bf1942.pathmap.smallonesgenerator import SmallonesGenerator
 class SmallonesGeneratorTest(unittest.TestCase):
     def setUp(self):
         header = PathmapHeader([4, 4, 6, 0, 0, 2])
-        tiles = [PathmapTile(PathmapTile.FLAG_DOGO) for _ in range(256)]
+        tiles = [PathmapTile.new(PathmapTile.FLAG_DOGO, 64) for _ in range(256)]
         pm = Pathmap(header, tiles)
 
         self.generator = SmallonesGenerator(pm)

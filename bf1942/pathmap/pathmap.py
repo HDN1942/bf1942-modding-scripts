@@ -1,3 +1,4 @@
+import math
 import struct
 from pathlib import Path
 from bf1942.pathmap.util import all_same, pack_data, unpack_data
@@ -105,25 +106,25 @@ class PathmapTile:
     FLAG_DOGO = 0
     FLAG_NOGO = 1
 
-    def __init__(self, flag, data=None, packed=True):
+    def __init__(self, flag, data):
         self.flag = flag
         '''Flag indicating type of tile, one of FLAG_DOGO, FLAG_NOGO or FLAG_MIXED.'''
 
-        self.data = None
-        '''Tile data, size is determined by bytes_per_tile attribute of PathmapHeader, only set when flag is FLAG_MIXED.'''
-
-        if data is not None:
-            self.data = unpack_data(data) if packed else data
+        self.data = data
+        '''Tile data as a list of booleans, length is determined by tile_size attribute of PathmapHeader.'''
 
     def write(self, file):
         file.write(int(self.flag).to_bytes(4, 'little', signed=True))
 
         if self.flag == self.FLAG_MIXED:
-            file.write(bytes(pack_data(self.data)))
+            ints = [int(not x) for x in self.data]
+            file.write(bytes(pack_data(ints)))
 
     @classmethod
     def from_file(cls, file, packed_size):
         '''Read tile data from a file.'''
+
+        assert packed_size > 0
 
         flag = int.from_bytes(file.read(4), 'little', signed=True)
 
@@ -135,9 +136,11 @@ class PathmapTile:
             if len(packed_data) < packed_size:
                 raise ValueError(f'Invalid tile data length: {len(packed_data)}')
 
-            return PathmapTile(flag, packed_data)
+            data = [not bool(x) for x in unpack_data(packed_data)]
+            return PathmapTile(flag, data)
         else:
-            return PathmapTile(flag)
+            tile_size = math.isqrt(packed_size * 8)
+            return PathmapTile.new(flag, tile_size)
 
     @classmethod
     def from_data(cls, unpacked_data):
@@ -146,11 +149,23 @@ class PathmapTile:
         assert len(unpacked_data) > 0
         assert all([isinstance(x, int) for x in unpacked_data])
 
-        if not all_same(unpacked_data):
-            return PathmapTile(cls.FLAG_MIXED, unpacked_data, packed=False)
+        data = [not bool(x) for x in unpacked_data]
+
+        if not all_same(data):
+            return PathmapTile(cls.FLAG_MIXED, data)
         else:
-            flag = cls.FLAG_NOGO if unpacked_data[0] == 1 else cls.FLAG_DOGO
-            return PathmapTile(flag)
+            flag = cls.FLAG_DOGO if data[0] == True else cls.FLAG_NOGO
+            return PathmapTile(flag, data)
+
+    @classmethod
+    def new(cls, flag, tile_size):
+        if flag not in [cls.FLAG_NOGO, cls.FLAG_DOGO, cls.FLAG_MIXED]:
+            raise ValueError(f'Invalid tile flag: {flag}')
+
+        if flag == cls.FLAG_NOGO:
+            return PathmapTile(flag, [False for _ in range(tile_size * tile_size)])
+        else:
+            return PathmapTile(flag, [True for _ in range(tile_size * tile_size)])
 
 class Pathmap:
     '''A raw pathmap.'''
