@@ -1,6 +1,7 @@
 import unittest
 from bf1942.pathmap.pathmap import Pathmap, PathmapHeader, PathmapTile
 from bf1942.pathmap.smallonesgenerator import SmallonesGenerator
+from bf1942.pathmap.util import all_same
 
 class SmallonesGeneratorTest(unittest.TestCase):
     def setUp(self):
@@ -9,6 +10,49 @@ class SmallonesGeneratorTest(unittest.TestCase):
         pm = Pathmap(header, tiles)
 
         self.generator = SmallonesGenerator(pm)
+
+    def test_generate_dogos(self):
+        for x in range(16):
+            for y in range(16):
+                tile = self.generator.smallones.tiles[y * 16 + x]
+
+                self.assertTrue(tile.waypoints[0].active)
+                self.assertFalse(tile.waypoints[1].active)
+                self.assertFalse(tile.waypoints[2].active)
+                self.assertFalse(tile.waypoints[3].active)
+
+                if x == 15:
+                    self.assertFalse(tile.waypoints[0].connected_right[0])
+                    self.assertTrue(all_same(tile.waypoints[0].connected_right))
+                else:
+                    self.assertTrue(tile.waypoints[0].connected_right[0])
+                    self.assertFalse(tile.waypoints[0].connected_right[1])
+                    self.assertFalse(tile.waypoints[0].connected_right[2])
+                    self.assertFalse(tile.waypoints[0].connected_right[3])
+
+                if y == 15:
+                    self.assertFalse(tile.waypoints[0].connected_bottom[0])
+                    self.assertTrue(all_same(tile.waypoints[0].connected_bottom))
+                else:
+                    self.assertTrue(tile.waypoints[0].connected_bottom[0])
+                    self.assertFalse(tile.waypoints[0].connected_bottom[1])
+                    self.assertFalse(tile.waypoints[0].connected_bottom[2])
+                    self.assertFalse(tile.waypoints[0].connected_bottom[3])
+
+                self.assertFalse(tile.waypoints[1].connected_bottom[0])
+                self.assertTrue(all_same(tile.waypoints[1].connected_bottom))
+                self.assertFalse(tile.waypoints[1].connected_right[0])
+                self.assertTrue(all_same(tile.waypoints[1].connected_right))
+
+                self.assertFalse(tile.waypoints[2].connected_bottom[0])
+                self.assertTrue(all_same(tile.waypoints[2].connected_bottom))
+                self.assertFalse(tile.waypoints[2].connected_right[0])
+                self.assertTrue(all_same(tile.waypoints[2].connected_right))
+
+                self.assertFalse(tile.waypoints[3].connected_bottom[0])
+                self.assertTrue(all_same(tile.waypoints[3].connected_bottom))
+                self.assertFalse(tile.waypoints[3].connected_right[0])
+                self.assertTrue(all_same(tile.waypoints[3].connected_right))
 
     def test_tile_above(self):
         # valid index

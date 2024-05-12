@@ -67,11 +67,15 @@ class SmallonesGenerator:
     def _set_point(self, tile_index, waypoint_index, x, y):
         tile = self._tiles[tile_index]
 
-        # set waypoint for this level and mark it as active
-        tile.activate(x, y, waypoint_index)
+        tile.so.waypoints[waypoint_index].x = x
+        tile.so.waypoints[waypoint_index].y = y
+        tile.so.waypoints[waypoint_index].active = True
 
-        if tile.above and tile.above.active:
-            for i in range(SmallonesTile.WAYPOINT_COUNT):
+        if tile.above:
+            for wp in tile.above.so.waypoints:
+                if not wp.active:
+                    continue
+
                 is_connected = False
 
                 for top_y in range(self._tile_size):
@@ -80,10 +84,13 @@ class SmallonesGenerator:
                         is_connected = True
                         break
 
-                tile.above.so.waypoints[i].connected_bottom[waypoint_index] = is_connected
+                wp.connected_bottom[waypoint_index] = is_connected
 
-        if tile.before and tile.before.active:
-            for i in range(SmallonesTile.WAYPOINT_COUNT):
+        if tile.before:
+            for wp in tile.before.so.waypoints:
+                if not wp.active:
+                    continue
+
                 is_connected = False
 
                 for right_x in range(0, self._tile_size * self._tile_size, self._tile_size):
@@ -92,7 +99,7 @@ class SmallonesGenerator:
                         is_connected = True
                         break
 
-                tile.before.so.waypoints[i].connected_right[waypoint_index] = is_connected
+                wp.connected_right[waypoint_index] = is_connected
 
 class SmallonesGeneratorTile:
     def __init__(self, generator, index):
@@ -102,14 +109,6 @@ class SmallonesGeneratorTile:
         self.pm = self.generator._pathmap.tiles[index]
         self.above = None
         self.before = None
-        self.active = False
-
-    def activate(self, x, y, waypoint_index):
-        wp = self.so.waypoints[waypoint_index]
-        wp.x = x
-        wp.y = y
-        wp.active = True
-        self.active = True
 
 def generate_smallones(pathmap):
     return SmallonesGenerator.generate(pathmap)
