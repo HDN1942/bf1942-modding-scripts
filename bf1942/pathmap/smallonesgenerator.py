@@ -60,6 +60,7 @@ class SmallonesGenerator:
                     # nothing to do, tile can't have a waypoint
                     pass
                 elif tile.pm.flag == PathmapTile.FLAG_DOGO:
+                    tile.areas[0] = [True for _ in range(self._tile_size * self._tile_size)]
                     self._set_point(index, 0, self.DEF_OFF, self.DEF_OFF)
                 else:
                     pass # findAreas
@@ -72,7 +73,8 @@ class SmallonesGenerator:
         tile.so.waypoints[waypoint_index].active = True
 
         if tile.above:
-            for wp in tile.above.so.waypoints:
+            for i in range(SmallonesTile.WAYPOINT_COUNT):
+                wp = tile.above.so.waypoints[i]
                 if not wp.active:
                     continue
 
@@ -80,14 +82,15 @@ class SmallonesGenerator:
 
                 for top_y in range(self._tile_size):
                     bottom_y = self._tile_size * (self._tile_size - 1) + top_y
-                    if tile.pm.data[top_y] and tile.above.pm.data[bottom_y]:
+                    if tile.areas[waypoint_index][top_y] and tile.above.areas[i][bottom_y]:
                         is_connected = True
                         break
 
                 wp.connected_bottom[waypoint_index] = is_connected
 
         if tile.before:
-            for wp in tile.before.so.waypoints:
+            for i in range(SmallonesTile.WAYPOINT_COUNT):
+                wp = tile.before.so.waypoints[i]
                 if not wp.active:
                     continue
 
@@ -95,7 +98,7 @@ class SmallonesGenerator:
 
                 for right_x in range(0, self._tile_size * self._tile_size, self._tile_size):
                     left_x = right_x + self._tile_size - 1
-                    if tile.pm.data[right_x] and tile.before.pm.data[left_x]:
+                    if tile.areas[waypoint_index][right_x] and tile.before.areas[i][left_x]:
                         is_connected = True
                         break
 
@@ -109,6 +112,7 @@ class SmallonesGeneratorTile:
         self.pm = self.generator._pathmap.tiles[index]
         self.above = None
         self.before = None
+        self.areas = [[] for _ in range(SmallonesTile.WAYPOINT_COUNT)]
 
 def generate_smallones(pathmap):
     return SmallonesGenerator.generate(pathmap)
