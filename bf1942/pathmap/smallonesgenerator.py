@@ -117,7 +117,7 @@ class SmallonesGenerator:
                     is_dogo = False
 
             if is_dogo:
-                line_end = self._tile_size - 1
+                line_end = self._tile_size
                 self._add_segment(tile, y, line_start, line_end)
 
         # sort areas largest to smallest
@@ -126,9 +126,8 @@ class SmallonesGenerator:
         # addSmallOnes
 
     def _add_segment(self, tile, y, start, end):
-        #for area in tile.areas:
-        for ai in range(4):
-            area = tile.areas[ai]
+        # TODO possible to incorrectly store smaller areas instead of larger ones if there are more than 4 areas
+        for area in tile.areas:
             if True in area:
                 # on first row, won't connect to this area
                 if y == 0:

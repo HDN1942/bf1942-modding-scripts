@@ -121,6 +121,44 @@ class SmallonesGeneratorTest(unittest.TestCase):
         self.assertArea(tile.areas[1], 10, 10, 10, 10)
         self.assertArea(tile.areas[0], 32, 32, 16, 16)
 
+    def test_find_areas_two_lines(self):
+        tile = self.generator._tiles[0]
+        tile.pm.data = [False for _ in range(64 * 64)]
+
+        area0 = [0, 1, 65, 66, 130, 131, 195, 196]
+        area1 = [4095, 4094, 4030, 4029, 3965, 3964, 3900, 3899]
+
+        for i in area0:
+            tile.pm.data[i] = True
+
+        for i in area1:
+            tile.pm.data[i] = True
+
+        self.generator._find_areas(tile)
+
+        # testutil.write_image('pm', tile.pm.data)
+        # testutil.write_image('area_0', tile.areas[0])
+        # testutil.write_image('area_1', tile.areas[1])
+        # testutil.write_image('area_2', tile.areas[2])
+        # testutil.write_image('area_3', tile.areas[3])
+
+        for i in range(64 * 64):
+            if i in area0:
+                self.assertTrue(tile.areas[0][i])
+            else:
+                self.assertFalse(tile.areas[0][i])
+
+        for i in range(64 * 64):
+            if i in area1:
+                self.assertTrue(tile.areas[1][i])
+            else:
+                self.assertFalse(tile.areas[1][i])
+
+        self.assertTrue(all_same(tile.areas[2]))
+        self.assertFalse(tile.areas[2][0])
+        self.assertTrue(all_same(tile.areas[3]))
+        self.assertFalse(tile.areas[3][0])
+
     def _draw_rect(self, area, x, y, width, height):
         for iy in range(y, y + height):
             for ix in range(x, x + width):

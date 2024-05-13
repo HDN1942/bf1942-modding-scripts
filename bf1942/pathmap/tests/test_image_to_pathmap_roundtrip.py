@@ -17,9 +17,6 @@ class TestImageToPathmapRoundtrip(unittest.TestCase):
         testutil.remove_dummy_files(self)
 
     def assertImageEqual(self, first, second):
-        first.save('reference.bmp')
-        second.save('result.bmp')
-
         diff = ImageChops.difference(first, second)
         bbox = diff.getbbox()
         if bbox:
