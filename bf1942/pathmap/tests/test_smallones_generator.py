@@ -1,4 +1,5 @@
 import unittest
+import bf1942.testutil as testutil
 from bf1942.pathmap.pathmap import Pathmap, PathmapHeader, PathmapTile
 from bf1942.pathmap.smallonesgenerator import SmallonesGenerator
 from bf1942.pathmap.util import all_same
@@ -10,11 +11,14 @@ class SmallonesGeneratorTest(unittest.TestCase):
         pm = Pathmap(header, tiles)
 
         self.generator = SmallonesGenerator(pm)
+        self.generator._setup()
 
     def test_generate_dogos(self):
+        smallones = self.generator.generate()
+
         for x in range(16):
             for y in range(16):
-                tile = self.generator.smallones.tiles[y * 16 + x]
+                tile = smallones.tiles[y * 16 + x]
 
                 self.assertTrue(tile.waypoints[0].active)
                 self.assertFalse(tile.waypoints[1].active)
@@ -95,6 +99,41 @@ class SmallonesGeneratorTest(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             self.generator._tile_before(256)
+
+    def test_find_areas_four_rectangles(self):
+        tile = self.generator._tiles[0]
+        tile.pm.data = [False for _ in range(64 * 64)]
+        self._draw_rect(tile.pm.data, 31, 0, 4, 4)    # 31/0  34/3
+        self._draw_rect(tile.pm.data, 0, 60, 10, 4)   #  0/60 9/63
+        self._draw_rect(tile.pm.data, 10, 10, 10, 10) # 10/10 19/19
+        self._draw_rect(tile.pm.data, 32, 32, 16, 16) # 32/32 47/47
+
+        self.generator._find_areas(tile)
+
+        # testutil.write_image('pm', tile.pm.data)
+        # testutil.write_image('area_0', tile.areas[0])
+        # testutil.write_image('area_1', tile.areas[1])
+        # testutil.write_image('area_2', tile.areas[2])
+        # testutil.write_image('area_3', tile.areas[3])
+
+        self.assertArea(tile.areas[3], 31, 0, 4, 4)
+        self.assertArea(tile.areas[2], 0, 60, 10, 4)
+        self.assertArea(tile.areas[1], 10, 10, 10, 10)
+        self.assertArea(tile.areas[0], 32, 32, 16, 16)
+
+    def _draw_rect(self, area, x, y, width, height):
+        for iy in range(y, y + height):
+            for ix in range(x, x + width):
+                area[iy * 64 + ix] = True
+
+    def assertArea(self, area, x, y, width, height):
+        for iy in range(64):
+            for ix in range(64):
+                index = iy * 64 + ix
+                if iy >= y and iy < y + height and ix >= x and ix < x + width:
+                    self.assertTrue(area[index], f"For rectangle {x},{y} {width}x{height} expected {ix},{iy} to be True but it was False")
+                else:
+                    self.assertFalse(area[index], f"For rectangle {x},{y} {width}x{height} expected {ix},{iy} to be False but it was True")
 
 if __name__ == '__main__':
     unittest.main()

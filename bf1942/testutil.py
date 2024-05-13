@@ -1,6 +1,8 @@
 import hashlib
 from pathlib import Path
+from PIL import Image
 from bf1942.RFA import RefractorFlatArchive
+from bf1942.pathmap.conversion import draw_mixed
 
 def create_dummy_directory(test_file):
     file = Path(test_file)
@@ -17,7 +19,7 @@ def create_dummy_file(path, contents='foo'):
 
     with open(path, 'w') as file:
         print(contents, file=file)
-    
+
     return compute_hash(path)
 
 def create_dummy_rfa(path, name, base=None):
@@ -36,7 +38,7 @@ def assert_rfa(tc, path, expectedFiles):
 
 def assert_file_hash(tc, hash, file, has_changed=False):
     actual_hash = compute_hash(file)
-    
+
     if (has_changed):
         tc.assertNotEqual(hash, actual_hash, 'File has not changed')
     else:
@@ -47,3 +49,8 @@ def compute_hash(file):
 
     sha256 = hashlib.sha256(contents, usedforsecurity=False)
     return sha256.hexdigest()
+
+def write_image(name, data, size=64):
+    with Image.new('1', (size, size)) as image:
+        draw_mixed(image, data, 0, 0, size)
+        image.save(f'{name}.bmp')

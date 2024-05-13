@@ -10,20 +10,17 @@ class SmallonesGenerator:
         self._tile_total = pathmap.header.tile_total
         self._tile_size = pathmap.header.tile_size
         self._tiles = []
+        self._smallones = Smallones.new(self._tile_length)
 
-        self.smallones = Smallones.new(self._tile_length)
-
+    def generate(self):
         self._setup()
         self._generate()
 
-    @classmethod
-    def generate(cls, pathmap):
-        generator = SmallonesGenerator(pathmap)
-        return generator.smallones
+        return self._smallones
 
     def _setup(self):
         for i in range(self._tile_total):
-            so_tile = self.smallones.tiles[i]
+            so_tile = self._smallones.tiles[i]
             pm_tile = self._pathmap.tiles[i]
             self._tiles.append(SmallonesGeneratorTile(self, i))
 
@@ -61,12 +58,12 @@ class SmallonesGenerator:
                     pass
                 elif tile.pm.flag == PathmapTile.FLAG_DOGO:
                     tile.areas[0] = [True for _ in range(self._tile_size * self._tile_size)]
-                    self._set_point(index, 0, self.DEF_OFF, self.DEF_OFF)
+                    self._set_point(tile, 0, self.DEF_OFF, self.DEF_OFF)
                 else:
-                    pass # findAreas
+                    self._find_areas(tile)
 
-    def _set_point(self, tile_index, waypoint_index, x, y):
-        tile = self._tiles[tile_index]
+    def _set_point(self, tile, waypoint_index, x, y):
+        '''Activate waypoint and connect areas.'''
 
         tile.so.waypoints[waypoint_index].x = x
         tile.so.waypoints[waypoint_index].y = y
@@ -104,15 +101,73 @@ class SmallonesGenerator:
 
                 wp.connected_right[waypoint_index] = is_connected
 
+    def _find_areas(self, tile):
+        for y in range(self._tile_size):
+            is_dogo = False
+
+            for x in range(self._tile_size):
+                pm_index = y * self._tile_size + x
+                line_end = x
+
+                if not is_dogo and tile.pm.data[pm_index]:
+                    is_dogo = True
+                    line_start = x
+                elif is_dogo and not tile.pm.data[pm_index]:
+                    self._add_segment(tile, y, line_start, line_end)
+                    is_dogo = False
+
+            if is_dogo:
+                line_end = self._tile_size - 1
+                self._add_segment(tile, y, line_start, line_end)
+
+        # sort areas largest to smallest
+        tile.areas.sort(key=lambda a: a.count(False))
+
+        # addSmallOnes
+
+    def _add_segment(self, tile, y, start, end):
+        #for area in tile.areas:
+        for ai in range(4):
+            area = tile.areas[ai]
+            if True in area:
+                # on first row, won't connect to this area
+                if y == 0:
+                    continue
+
+                above_start_index = (y - 1) * self._tile_size + start
+
+                # area has lines, check if this one connects
+                for i in range(above_start_index, above_start_index + end):
+                    # if this line connects with the above line then append it to the area
+                    if area[i]:
+                        self._append_line(area, y, start, end)
+                        return
+            else:
+                # area is empty, add this line
+                self._append_line(area, y, start, end)
+                return
+
+    def _append_line(self, area, y, start, end):
+        start_index = y * self._tile_size + start
+        end_index = y * self._tile_size + end
+
+        for i in range(start_index, end_index):
+            area[i] = True
+
 class SmallonesGeneratorTile:
     def __init__(self, generator, index):
         self.generator = generator
         self.index = index
-        self.so = self.generator.smallones.tiles[index]
+        self.so = self.generator._smallones.tiles[index]
         self.pm = self.generator._pathmap.tiles[index]
         self.above = None
         self.before = None
-        self.areas = [[] for _ in range(SmallonesTile.WAYPOINT_COUNT)]
+        self.areas = []
+
+        tile_area = self.generator._tile_size * self.generator._tile_size
+
+        for i in range(SmallonesTile.WAYPOINT_COUNT):
+            self.areas.append([False for _ in range(tile_area)])
 
 def generate_smallones(pathmap):
     return SmallonesGenerator.generate(pathmap)
