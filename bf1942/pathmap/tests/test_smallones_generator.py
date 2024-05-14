@@ -110,16 +110,10 @@ class SmallonesGeneratorTest(unittest.TestCase):
 
         self.generator._find_areas(tile)
 
-        # testutil.write_image('pm', tile.pm.data)
-        # testutil.write_image('area_0', tile.areas[0])
-        # testutil.write_image('area_1', tile.areas[1])
-        # testutil.write_image('area_2', tile.areas[2])
-        # testutil.write_image('area_3', tile.areas[3])
-
-        self.assertArea(tile.areas[3], 31, 0, 4, 4)
-        self.assertArea(tile.areas[2], 0, 60, 10, 4)
-        self.assertArea(tile.areas[1], 10, 10, 10, 10)
-        self.assertArea(tile.areas[0], 32, 32, 16, 16)
+        self.assertRectangleInArea(tile.areas[3], 31, 0, 4, 4)
+        self.assertRectangleInArea(tile.areas[2], 0, 60, 10, 4)
+        self.assertRectangleInArea(tile.areas[1], 10, 10, 10, 10)
+        self.assertRectangleInArea(tile.areas[0], 32, 32, 16, 16)
 
     def test_find_areas_two_lines(self):
         tile = self.generator._tiles[0]
@@ -135,12 +129,6 @@ class SmallonesGeneratorTest(unittest.TestCase):
             tile.pm.data[i] = True
 
         self.generator._find_areas(tile)
-
-        # testutil.write_image('pm', tile.pm.data)
-        # testutil.write_image('area_0', tile.areas[0])
-        # testutil.write_image('area_1', tile.areas[1])
-        # testutil.write_image('area_2', tile.areas[2])
-        # testutil.write_image('area_3', tile.areas[3])
 
         for i in range(64 * 64):
             if i in area0:
@@ -159,12 +147,31 @@ class SmallonesGeneratorTest(unittest.TestCase):
         self.assertTrue(all_same(tile.areas[3]))
         self.assertFalse(tile.areas[3][0])
 
+    def test_find_areas_only_adds_four_largest_areas(self):
+        tile = self.generator._tiles[0]
+        tile.pm.data = [False for _ in range(64 * 64)]
+        self._draw_rect(tile.pm.data, 31, 0, 4, 4)    #  16
+        self._draw_rect(tile.pm.data, 0, 60, 10, 4)   #  40
+        self._draw_rect(tile.pm.data, 10, 10, 10, 10) # 100
+        self._draw_rect(tile.pm.data, 32, 32, 16, 16) # 256
+        self._draw_rect(tile.pm.data, 0, 0, 2, 2)     #   4
+        self._draw_rect(tile.pm.data, 8, 0, 4, 3)     #  12
+        self._draw_rect(tile.pm.data, 61, 62, 3, 2)   #   6
+
+        self.generator._find_areas(tile)
+
+        self.assertEqual(4, len(tile.areas))
+        self.assertRectangleInArea(tile.areas[3], 31, 0, 4, 4)
+        self.assertRectangleInArea(tile.areas[2], 0, 60, 10, 4)
+        self.assertRectangleInArea(tile.areas[1], 10, 10, 10, 10)
+        self.assertRectangleInArea(tile.areas[0], 32, 32, 16, 16)
+
     def _draw_rect(self, area, x, y, width, height):
         for iy in range(y, y + height):
             for ix in range(x, x + width):
                 area[iy * 64 + ix] = True
 
-    def assertArea(self, area, x, y, width, height):
+    def assertRectangleInArea(self, area, x, y, width, height):
         for iy in range(64):
             for ix in range(64):
                 index = iy * 64 + ix
@@ -172,6 +179,13 @@ class SmallonesGeneratorTest(unittest.TestCase):
                     self.assertTrue(area[index], f"For rectangle {x},{y} {width}x{height} expected {ix},{iy} to be True but it was False")
                 else:
                     self.assertFalse(area[index], f"For rectangle {x},{y} {width}x{height} expected {ix},{iy} to be False but it was True")
+
+    def write_debug_images(self, tile):
+        testutil.write_image('pm', tile.pm.data)
+        testutil.write_image('area_0', tile.areas[0])
+        testutil.write_image('area_1', tile.areas[1])
+        testutil.write_image('area_2', tile.areas[2])
+        testutil.write_image('area_3', tile.areas[3])
 
 if __name__ == '__main__':
     unittest.main()

@@ -9,6 +9,7 @@ class SmallonesGenerator:
         self._tile_length = pathmap.header.tile_length
         self._tile_total = pathmap.header.tile_total
         self._tile_size = pathmap.header.tile_size
+        self._tile_area = self._tile_size * self._tile_size
         self._tiles = []
         self._smallones = Smallones.new(self._tile_length)
 
@@ -57,7 +58,8 @@ class SmallonesGenerator:
                     # nothing to do, tile can't have a waypoint
                     pass
                 elif tile.pm.flag == PathmapTile.FLAG_DOGO:
-                    tile.areas[0] = [True for _ in range(self._tile_size * self._tile_size)]
+                    tile.areas.append([True for _ in range(self._tile_area)])
+                    self._fill_areas(tile)
                     self._set_point(tile, 0, self.DEF_OFF, self.DEF_OFF)
                 else:
                     self._find_areas(tile)
@@ -93,7 +95,7 @@ class SmallonesGenerator:
 
                 is_connected = False
 
-                for right_x in range(0, self._tile_size * self._tile_size, self._tile_size):
+                for right_x in range(0, self._tile_area, self._tile_size):
                     left_x = right_x + self._tile_size - 1
                     if tile.areas[waypoint_index][right_x] and tile.before.areas[i][left_x]:
                         is_connected = True
@@ -102,6 +104,8 @@ class SmallonesGenerator:
                 wp.connected_right[waypoint_index] = is_connected
 
     def _find_areas(self, tile):
+        '''Find contiguous areas in a tile's pathmap.'''
+
         for y in range(self._tile_size):
             is_dogo = False
 
@@ -113,40 +117,56 @@ class SmallonesGenerator:
                     is_dogo = True
                     line_start = x
                 elif is_dogo and not tile.pm.data[pm_index]:
-                    self._add_segment(tile, y, line_start, line_end)
+                    self._add_line(tile, y, line_start, line_end)
                     is_dogo = False
 
             if is_dogo:
                 line_end = self._tile_size
-                self._add_segment(tile, y, line_start, line_end)
+                self._add_line(tile, y, line_start, line_end)
 
         # sort areas largest to smallest
         tile.areas.sort(key=lambda a: a.count(False))
 
+        # must have WAYPOINT_COUNT number of areas
+        self._fill_areas(tile)
+
+        # drop any areas beyond WAYPOINT_COUNT
+        tile.areas = tile.areas[0:4]
+
         # addSmallOnes
 
-    def _add_segment(self, tile, y, start, end):
-        # TODO possible to incorrectly store smaller areas instead of larger ones if there are more than 4 areas
+    def _fill_areas(self, tile):
+        '''Add up to WAYPOINT_COUNT NOGO areas to tile.'''
+
+        while len(tile.areas) < SmallonesTile.WAYPOINT_COUNT:
+            tile.areas.append([False for _ in range(self._tile_area)])
+
+    def _add_line(self, tile, y, start, end):
+        '''Add a line to a connecting area if found or a new area if not found.'''
+
         for area in tile.areas:
-            if True in area:
-                # on first row, won't connect to this area
-                if y == 0:
-                    continue
+            # on first row, won't connect to this area
+            if y == 0:
+                continue
 
-                above_start_index = (y - 1) * self._tile_size + start
+            above_start_index = (y - 1) * self._tile_size + start
+            above_end_index = (y - 1) * self._tile_size + end
 
-                # area has lines, check if this one connects
-                for i in range(above_start_index, above_start_index + end):
-                    # if this line connects with the above line then append it to the area
-                    if area[i]:
-                        self._append_line(area, y, start, end)
-                        return
-            else:
-                # area is empty, add this line
-                self._append_line(area, y, start, end)
-                return
+            # area has lines, check if this one connects
+            for i in range(above_start_index, above_end_index):
+                # if this line connects with the above line then append it to the area
+                if area[i]:
+                    self._set_line(area, y, start, end)
+                    return
 
-    def _append_line(self, area, y, start, end):
+        # does not connect to existing areas, add a new one
+        new_area = [False for _ in range(self._tile_area)]
+        tile.areas.append(new_area)
+        self._set_line(new_area, y, start, end)
+
+    def _set_line(self, area, y, start, end):
+        '''Set line values to True in area.'''
+
         start_index = y * self._tile_size + start
         end_index = y * self._tile_size + end
 
@@ -162,11 +182,6 @@ class SmallonesGeneratorTile:
         self.above = None
         self.before = None
         self.areas = []
-
-        tile_area = self.generator._tile_size * self.generator._tile_size
-
-        for i in range(SmallonesTile.WAYPOINT_COUNT):
-            self.areas.append([False for _ in range(tile_area)])
 
 def generate_smallones(pathmap):
     return SmallonesGenerator.generate(pathmap)
