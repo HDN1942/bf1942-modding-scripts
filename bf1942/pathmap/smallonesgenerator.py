@@ -1,9 +1,8 @@
+from shapely import MultiLineString
 from .pathmap import PathmapTile
 from .smallones import Smallones, SmallonesTile
 
 class SmallonesGenerator:
-    DEF_OFF = 48 # default offset? something binary?
-
     def __init__(self, pathmap):
         self._pathmap = pathmap
         self._tile_length = pathmap.header.tile_length
@@ -60,7 +59,9 @@ class SmallonesGenerator:
                 elif tile.pm.flag == PathmapTile.FLAG_DOGO:
                     tile.areas.append([True for _ in range(self._tile_area)])
                     self._fill_areas(tile)
-                    self._set_point(tile, 0, self.DEF_OFF, self.DEF_OFF)
+                    # genpathmaps uses 48 (top right corner) as the default position for a full DOGO tile.
+                    # This implementation uses tile center (32) instead as that's how Dice did it in the original levels.
+                    self._set_point(tile, 0, self._tile_size / 2, self._tile_size / 2)
                 else:
                     self._find_areas(tile)
 
@@ -124,16 +125,17 @@ class SmallonesGenerator:
                 line_end = self._tile_size
                 self._add_line(tile, y, line_start, line_end)
 
-        # sort areas largest to smallest
-        tile.areas.sort(key=lambda a: a.count(False))
+        # convert to Shapely geometry
+        tile.areas = [MultiLineString(a) for a in tile.areas]
 
-        # must have WAYPOINT_COUNT number of areas
-        self._fill_areas(tile)
+        # sort areas largest to smallest
+        tile.areas.sort(key=lambda a: a.length)
+        tile.areas.reverse()
 
         # drop any areas beyond WAYPOINT_COUNT
         tile.areas = tile.areas[0:4]
 
-        # addSmallOnes
+        self._set_waypoints(tile)
 
     def _fill_areas(self, tile):
         '''Add up to WAYPOINT_COUNT NOGO areas to tile.'''
@@ -149,29 +151,28 @@ class SmallonesGenerator:
             if y == 0:
                 continue
 
-            above_start_index = (y - 1) * self._tile_size + start
-            above_end_index = (y - 1) * self._tile_size + end
+            last_line = area[len(area) - 1]
+            last_y = last_line[0][1]
+            last_start = last_line[0][0]
+            last_end = last_line[1][0]
 
-            # area has lines, check if this one connects
-            for i in range(above_start_index, above_end_index):
-                # if this line connects with the above line then append it to the area
-                if area[i]:
-                    self._set_line(area, y, start, end)
+            # if this line connects with the last line then append it to the area
+            if last_y == y - 1 and start <= last_end and end >= last_start:
+                    area.append([(start, y), (end, y)])
                     return
 
         # does not connect to existing areas, add a new one
-        new_area = [False for _ in range(self._tile_area)]
-        tile.areas.append(new_area)
-        self._set_line(new_area, y, start, end)
+        tile.areas.append([[(start, y), (end, y)]])
 
-    def _set_line(self, area, y, start, end):
-        '''Set line values to True in area.'''
+    def _set_waypoints(self, tile):
+        '''Set waypoint for tile areas using centroid.'''
 
-        start_index = y * self._tile_size + start
-        end_index = y * self._tile_size + end
+        for i in range(0, min(len(tile.areas), SmallonesTile.WAYPOINT_COUNT)):
+            centroid = tile.areas[i].centroid
+            x = round(centroid.x)
+            y = round(centroid.y)
 
-        for i in range(start_index, end_index):
-            area[i] = True
+            self._set_point(tile, i, x, y)
 
 class SmallonesGeneratorTile:
     def __init__(self, generator, index):

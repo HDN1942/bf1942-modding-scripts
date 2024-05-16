@@ -119,8 +119,8 @@ class SmallonesGeneratorTest(unittest.TestCase):
         tile = self.generator._tiles[0]
         tile.pm.data = [False for _ in range(64 * 64)]
 
-        area0 = [0, 1, 65, 66, 130, 131, 195, 196]
-        area1 = [4095, 4094, 4030, 4029, 3965, 3964, 3900, 3899]
+        area0 = [4095, 4094, 4030, 4029, 3965, 3964, 3900, 3899]
+        area1 = [0, 1, 65, 66, 130, 131, 195, 196]
 
         for i in area0:
             tile.pm.data[i] = True
@@ -130,22 +130,21 @@ class SmallonesGeneratorTest(unittest.TestCase):
 
         self.generator._find_areas(tile)
 
+        self.assertEqual(2, len(tile.areas))
+        tileArea0 = self.lines_to_pathmap(tile.areas[0])
+        tileArea1 = self.lines_to_pathmap(tile.areas[1])
+
         for i in range(64 * 64):
             if i in area0:
-                self.assertTrue(tile.areas[0][i])
+                self.assertTrue(tileArea0[i])
             else:
-                self.assertFalse(tile.areas[0][i])
+                self.assertFalse(tileArea0[i])
 
         for i in range(64 * 64):
             if i in area1:
-                self.assertTrue(tile.areas[1][i])
+                self.assertTrue(tileArea1[i])
             else:
-                self.assertFalse(tile.areas[1][i])
-
-        self.assertTrue(all_same(tile.areas[2]))
-        self.assertFalse(tile.areas[2][0])
-        self.assertTrue(all_same(tile.areas[3]))
-        self.assertFalse(tile.areas[3][0])
+                self.assertFalse(tileArea1[i])
 
     def test_find_areas_only_adds_four_largest_areas(self):
         tile = self.generator._tiles[0]
@@ -171,21 +170,35 @@ class SmallonesGeneratorTest(unittest.TestCase):
             for ix in range(x, x + width):
                 area[iy * 64 + ix] = True
 
+    def lines_to_pathmap(self, area):
+        pm = [False for _ in range(4096)]
+
+        for line in [l.coords for l in area.geoms]:
+            start_index = int(line[0][1] * 64 + line[0][0])
+            end_index = int(line[0][1] * 64 + line[1][0])
+
+            for i in range(start_index, end_index):
+                pm[i] = True
+
+        return pm
+
     def assertRectangleInArea(self, area, x, y, width, height):
+        pm = self.lines_to_pathmap(area)
+
         for iy in range(64):
             for ix in range(64):
                 index = iy * 64 + ix
                 if iy >= y and iy < y + height and ix >= x and ix < x + width:
-                    self.assertTrue(area[index], f"For rectangle {x},{y} {width}x{height} expected {ix},{iy} to be True but it was False")
+                    self.assertTrue(pm[index], f"For rectangle {x},{y} {width}x{height} expected {ix},{iy} to be True but it was False")
                 else:
-                    self.assertFalse(area[index], f"For rectangle {x},{y} {width}x{height} expected {ix},{iy} to be False but it was True")
+                    self.assertFalse(pm[index], f"For rectangle {x},{y} {width}x{height} expected {ix},{iy} to be False but it was True")
 
     def write_debug_images(self, tile):
         testutil.write_image('pm', tile.pm.data)
-        testutil.write_image('area_0', tile.areas[0])
-        testutil.write_image('area_1', tile.areas[1])
-        testutil.write_image('area_2', tile.areas[2])
-        testutil.write_image('area_3', tile.areas[3])
+        testutil.write_image('area_0', self.lines_to_pathmap(tile.areas[0]))
+        testutil.write_image('area_1', self.lines_to_pathmap(tile.areas[1]))
+        testutil.write_image('area_2', self.lines_to_pathmap(tile.areas[2]))
+        testutil.write_image('area_3', self.lines_to_pathmap(tile.areas[3]))
 
 if __name__ == '__main__':
     unittest.main()
