@@ -165,15 +165,64 @@ class SmallonesGeneratorTest(unittest.TestCase):
         self.assertRectangleInArea(tile.areas[1], 10, 10, 10, 10)
         self.assertRectangleInArea(tile.areas[0], 32, 32, 16, 16)
 
+    def test_generate_diamonds_four_way_connect(self):
+        for y in range(16):
+            for x in range(16):
+                tile = self.generator._tiles[y * 16 + x]
+                tile.pm.flag = PathmapTile.FLAG_MIXED
+                self._draw_diamond(tile.pm.data)
+
+        smallones = self.generator.generate()
+
+        for y in range(16):
+            for x in range(16):
+                tile_index = y * 16 + x
+                tile = smallones.tiles[tile_index]
+                active_wps = [x for x in tile.waypoints if x.active]
+                num_active = sum([1 for x in active_wps])
+
+                num_connected_bottom = 0
+                num_connected_right = 0
+                for wp in active_wps:
+                    num_connected_bottom += sum([1 for x in wp.connected_bottom if x is True])
+                    num_connected_right += sum([1 for x in wp.connected_right if x is True])
+
+                self.assertEqual(4, num_active, f"Tile #{tile_index} at {x},{y} has {num_active} active")
+
+                # connected:
+                if y == 15:
+                    if x == 15:
+                        self.assertEqual(0, num_connected_bottom, f"Tile #{tile_index} at {x},{y} has {num_connected_bottom} connected bottom")
+                        self.assertEqual(0, num_connected_right, f"Tile #{tile_index} at {x},{y} has {num_connected_right} connected right")
+                    else:
+                        self.assertEqual(0, num_connected_bottom, f"Tile #{tile_index} at {x},{y} has {num_connected_bottom} connected bottom")
+                        self.assertEqual(2, num_connected_right, f"Tile #{tile_index} at {x},{y} has {num_connected_right} connected right")
+                elif x == 15:
+                    self.assertEqual(2, num_connected_bottom, f"Tile #{tile_index} at {x},{y} has {num_connected_bottom} connected bottom")
+                    self.assertEqual(0, num_connected_right, f"Tile #{tile_index} at {x},{y} has {num_connected_right} connected right")
+                else:
+                    self.assertEqual(2, num_connected_bottom, f"Tile #{tile_index} at {x},{y} has {num_connected_bottom} connected bottom")
+                    self.assertEqual(2, num_connected_right, f"Tile #{tile_index} at {x},{y} has {num_connected_right} connected right")
+
     def _draw_rect(self, area, x, y, width, height):
         for iy in range(y, y + height):
             for ix in range(x, x + width):
                 area[iy * 64 + ix] = True
 
+    def _draw_diamond(self, area):
+        for x in range(31, -1, -1):
+            count = (32 - x) * 2
+            top = 31 - x
+            bottom = 32 + x
+
+            for ix in range(x, x + count):
+                area[top * 64 + ix] = False
+                area[bottom * 64 + ix] = False
+
     def lines_to_pathmap(self, area):
         pm = [False for _ in range(4096)]
 
-        for line in [l.coords for l in area.geoms]:
+        for line in [l.coords for l in area.geom.geoms]:
             start_index = int(line[0][1] * 64 + line[0][0])
             end_index = int(line[0][1] * 64 + line[1][0])
 

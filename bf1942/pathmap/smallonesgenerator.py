@@ -1,4 +1,4 @@
-from shapely import MultiLineString
+from shapely import MultiLineString, Polygon
 from .pathmap import PathmapTile
 from .smallones import Smallones, SmallonesTile
 
@@ -57,7 +57,7 @@ class SmallonesGenerator:
                     # nothing to do, tile can't have a waypoint
                     pass
                 elif tile.pm.flag == PathmapTile.FLAG_DOGO:
-                    tile.areas.append([True for _ in range(self._tile_area)])
+                    tile.areas.append(SmallonesArea.dogo(self._tile_size))
                     self._fill_areas(tile)
                     # genpathmaps uses 48 (top right corner) as the default position for a full DOGO tile.
                     # This implementation uses tile center (32) instead as that's how Dice did it in the original levels.
@@ -82,7 +82,7 @@ class SmallonesGenerator:
 
                 for top_y in range(self._tile_size):
                     bottom_y = self._tile_size * (self._tile_size - 1) + top_y
-                    if tile.areas[waypoint_index][top_y] and tile.above.areas[i][bottom_y]:
+                    if tile.areas[waypoint_index].data[top_y] and tile.above.areas[i].data[bottom_y]:
                         is_connected = True
                         break
 
@@ -98,7 +98,7 @@ class SmallonesGenerator:
 
                 for right_x in range(0, self._tile_area, self._tile_size):
                     left_x = right_x + self._tile_size - 1
-                    if tile.areas[waypoint_index][right_x] and tile.before.areas[i][left_x]:
+                    if tile.areas[waypoint_index].data[right_x] and tile.before.areas[i].data[left_x]:
                         is_connected = True
                         break
 
@@ -125,11 +125,11 @@ class SmallonesGenerator:
                 line_end = self._tile_size
                 self._add_line(tile, y, line_start, line_end)
 
-        # convert to Shapely geometry
-        tile.areas = [MultiLineString(a) for a in tile.areas]
+        # convert collected lines into area objects
+        tile.areas = [SmallonesArea.from_lines(a, self._tile_size) for a in tile.areas]
 
         # sort areas largest to smallest
-        tile.areas.sort(key=lambda a: a.length)
+        tile.areas.sort(key=lambda a: a.size)
         tile.areas.reverse()
 
         # drop any areas beyond WAYPOINT_COUNT
@@ -141,7 +141,7 @@ class SmallonesGenerator:
         '''Add up to WAYPOINT_COUNT NOGO areas to tile.'''
 
         while len(tile.areas) < SmallonesTile.WAYPOINT_COUNT:
-            tile.areas.append([False for _ in range(self._tile_area)])
+            tile.areas.append(SmallonesArea.nogo(self._tile_size))
 
     def _add_line(self, tile, y, start, end):
         '''Add a line to a connecting area if found or a new area if not found.'''
@@ -168,7 +168,10 @@ class SmallonesGenerator:
         '''Set waypoint for tile areas using centroid.'''
 
         for i in range(0, min(len(tile.areas), SmallonesTile.WAYPOINT_COUNT)):
-            centroid = tile.areas[i].centroid
+            if tile.areas[i].size == 0:
+                continue
+
+            centroid = tile.areas[i].geom.centroid
             x = round(centroid.x)
             y = round(centroid.y)
 
@@ -184,5 +187,40 @@ class SmallonesGeneratorTile:
         self.before = None
         self.areas = []
 
+class SmallonesArea:
+    def __init__(self, geom, data):
+        self.geom = geom
+        self.data = data
+        self.size = sum([1 for x in self.data if x is True])
+
+    @classmethod
+    def from_lines(cls, lines, tile_size):
+        geom = MultiLineString(lines)
+        data = [False for _ in range(tile_size * tile_size)]
+
+        for line in [l.coords for l in geom.geoms]:
+            start_index = int(line[0][1] * tile_size + line[0][0])
+            end_index = int(line[0][1] * tile_size + line[1][0])
+
+            for i in range(start_index, end_index):
+                data[i] = True
+
+        return SmallonesArea(geom, data)
+
+    @classmethod
+    def dogo(cls, tile_size):
+        return cls._fill(True, tile_size)
+
+    @classmethod
+    def nogo(cls, tile_size):
+        return cls._fill(False, tile_size)
+
+    @classmethod
+    def _fill(cls, value, tile_size):
+        geom = Polygon([(0, 0), (tile_size, 0), (tile_size, tile_size), (0, tile_size), (0, 0)])
+        data = [value for _ in range(tile_size * tile_size)]
+        return SmallonesArea(geom, data)
+
 def generate_smallones(pathmap):
-    return SmallonesGenerator.generate(pathmap)
+    generator = SmallonesGenerator(pathmap)
+    return generator.generate()
