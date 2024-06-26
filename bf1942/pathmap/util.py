@@ -47,3 +47,33 @@ def unpack_data(data):
             unpacked_data.append(value)
 
     return unpacked_data
+
+def pack_data2b(data):
+    '''Pack a sequence of 2-bit integers into a list of bytes.'''
+
+    packed_data = []
+
+    for i in range(0, len(data), 4):
+        value = 0
+
+        for j in range(0, 4):
+            if i + j >= len(data):
+                # data length not a multiple of 4
+                break
+            value |= (3 & data[i + j]) << j * 2
+
+        packed_data.append(value)
+
+    return packed_data
+
+def unpack_data2b(data):
+    '''Unpack a sequence of bytes into a list of 2-bit integers.'''
+
+    unpacked_data = []
+
+    for byte in data:
+        for i in range(0, 4):
+            value = (byte >> i * 2) & 3
+            unpacked_data.append(value)
+
+    return unpacked_data
