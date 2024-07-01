@@ -18,7 +18,7 @@ def pathmap_to_image(source_file):
         raise ValueError('Pathmap is not a level 0 map')
 
     if header.is_info:
-        raise ValueError('Pathmap is an info map')
+        raise ValueError('Pathmap is an infomap')
 
     image = Image.new('1', (header.map_width, header.map_height))
     draw = ImageDraw.Draw(image)

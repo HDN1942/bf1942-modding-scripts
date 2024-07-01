@@ -35,7 +35,7 @@ class PathmapHeaderTest(unittest.TestCase):
         self.assertEqual(2048, pm.map_width)
         self.assertEqual(2048, pm.map_height)
 
-        # 2048 info map
+        # 2048 infomap
         pm = PathmapHeader((5, 5, 6, 1, 1, 2))
         self.assertEqual(32, pm.tile_length)
         self.assertEqual(1024, pm.tile_total)
@@ -64,7 +64,7 @@ class PathmapHeaderTest(unittest.TestCase):
         self.assertEqual(4096, pm.map_width)
         self.assertEqual(4096, pm.map_height)
 
-        # 4096 info map
+        # 4096 infomap
         pm = PathmapHeader((6, 6, 6, 1, 1, 2))
         self.assertEqual(64, pm.tile_length)
         self.assertEqual(4096, pm.tile_total)
