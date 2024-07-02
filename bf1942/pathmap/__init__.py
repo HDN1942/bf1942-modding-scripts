@@ -10,3 +10,4 @@ from .pathmap import Pathmap
 from .smallones import Smallones
 from .smallonesgenerator import generate_smallones
 from .conversion import pathmap_to_image, image_to_pathmap
+from .shell import detect_input_format, detect_output_format
