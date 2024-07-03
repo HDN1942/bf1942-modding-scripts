@@ -8,8 +8,6 @@ class DetectOutputFormat(unittest.TestCase):
 
         self.root = testutil.create_dummy_files({
             'dir': {},
-            'file.bmp': '',
-            'file.png': '',
             'file.raw': '',
             'file.bad': ''
         })
@@ -31,7 +29,6 @@ class DetectOutputFormat(unittest.TestCase):
         self.assertIsNone(detect_output_format('bmp', self.root / 'file.png'))
         self.assertIsNone(detect_output_format('bmp', self.root / 'file.raw'))
         self.assertIsNone(detect_output_format('bmp', self.root / 'file.bad'))
-        self.assertIsNone(detect_output_format('raw', self.root / 'none.bmp'))
 
         # error path
         with self.assertRaises(AssertionError):

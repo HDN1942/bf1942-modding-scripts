@@ -98,13 +98,13 @@ treemesh
 #### Convert pathmaps to/from various formats
 
 ```bash
-python3 -m pathmaps [-h] [--in-format FORMAT] [--out-format FORMAT] [--overwrite] source_path destination_path
+python3 -m pathmaps [-h] source_path destination_path
 ```
 
 Supported formats:
 * `raw`
 
-  Native Battlefield 1942 pathmap format (NOTE: not yet supported, use `genpathmaps` instead)
+  Native Battlefield 1942 pathmap format
 
 * `bmp`
 
@@ -112,29 +112,22 @@ Supported formats:
 
 * `png`
 
-   Portable Network Graphics format with lossless compression
+  Portable Network Graphics format with lossless compression
+
+* `dds`
+
+  Direct Draw Surface format with DXT1/BC1 encoding, the native Battlefield 1942 level texture format
+
+Formats are determined automatically from source/destination path.
 
 Positional arguments:
 * `source_path`
 
-  Source directory containing files in the `--in-format` format
+  Source path of file, or path to directory containing files to be converted
 
 * `destination_path`
 
-  Destination directory for converted files
-
-Options:
-* `-i`, `--in-format`
-
-  Required, the input format
-
-* `-o`, `--out-format`
-
-  Required, the output format
-
-* `--overwrite`
-
-  Overwrite any existing files in destination path
+  Destination path of file or directory for converted file(s)
 
 #### Calculate strategic area coordinates from map coordinates
 

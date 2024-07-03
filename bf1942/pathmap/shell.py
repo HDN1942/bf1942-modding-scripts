@@ -28,17 +28,17 @@ def detect_output_format(in_format, path):
 
     path = Path(path)
 
-    # if file, detect from suffix
-    if path.is_file():
+    if path.is_dir():
+        # if directory and input is raw, output is dds, otherwise output is raw
+        return 'dds' if in_format == 'raw' else 'raw'
+
+    else:
+        # assume path is a file and detect from suffix
         out_format = path.suffix[1:]
 
         # input format must be raw and only bmp and png make sense as a file output format
         if in_format == 'raw' and out_format in ['bmp', 'png']:
             return out_format
-
-    elif path.is_dir():
-        # if directory and input is raw, output is dds, otherwise output is raw
-        return 'dds' if in_format == 'raw' else 'raw'
 
     # invalid format
     return None
