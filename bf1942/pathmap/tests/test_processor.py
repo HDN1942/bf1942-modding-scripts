@@ -1,20 +1,29 @@
 import unittest
-import bf1942.testutil
+import bf1942.tests.util as testutil
+from bf1942.testutil import write_image
 from bf1942.pathmap.conversion import pathmap_to_image
 from bf1942.pathmap.pathmap import Pathmap, PathmapHeader, PathmapTile
-from bf1942.pathmap.smallonesgenerator import SmallonesGenerator
+from bf1942.pathmap.processor import PathmapProcessor
+from bf1942.pathmap.smallones import Smallones
 from bf1942.pathmap.util import all_same
 
-class SmallonesGeneratorTest(unittest.TestCase):
+class PathmapProcessorTest(unittest.TestCase):
     def setUp(self):
+        testutil.remove_dummy_files(self)
+
+        self.root = testutil.create_dummy_files({})
+
         header = PathmapHeader([4, 4, 6, 0, 0, 2])
         tiles = [PathmapTile.new(PathmapTile.FLAG_DOGO) for _ in range(256)]
         self.pathmap = Pathmap(header, tiles)
 
-        self.generator = SmallonesGenerator(self.pathmap)
+        self.processor = PathmapProcessor()
 
-    def test_generate_dogos(self):
-        smallones, _ = self.generator.generate()
+    def tearDown(self):
+        testutil.remove_dummy_files(self)
+
+    def test_smallones_all_dogos(self):
+        _, smallones, _ = self.processor.process(self.pathmap)
 
         for x in range(16):
             for y in range(16):
@@ -59,62 +68,62 @@ class SmallonesGeneratorTest(unittest.TestCase):
                 self.assertTrue(all_same(tile.waypoints[3].connected_right))
 
     def test_tile_above(self):
-        self.generator._setup()
+        self.processor._setup(self.pathmap)
 
         # valid index
         for y in range(16):
             for x in range(16):
                 index = y * 16 + x
-                result = self.generator._tile_above(index)
+                result = self.processor._tile_above(index)
 
                 if y == 0:
                     # no tile above for tiles in first row
                     self.assertIsNone(result)
                 else:
                     # will have tile above
-                    self.assertEqual(self.generator._tiles[index - 16], result)
+                    self.assertEqual(self.processor._tiles[index - 16], result)
 
         # invalid index
         with self.assertRaises(AssertionError):
-            self.generator._tile_above(-1)
+            self.processor._tile_above(-1)
 
         with self.assertRaises(AssertionError):
-            self.generator._tile_above(256)
+            self.processor._tile_above(256)
 
     def test_tile_before(self):
-        self.generator._setup()
+        self.processor._setup(self.pathmap)
 
         # valid index
         for y in range(16):
             for x in range(16):
                 index = y * 16 + x
-                result = self.generator._tile_before(index)
+                result = self.processor._tile_before(index)
 
                 if x == 0:
                     # no tile before for tiles in first column
                     self.assertIsNone(result, f'Index: {index}')
                 else:
                     # will have tile before
-                    self.assertEqual(self.generator._tiles[index - 1], result)
+                    self.assertEqual(self.processor._tiles[index - 1], result)
 
         # invalid index
         with self.assertRaises(AssertionError):
-            self.generator._tile_before(-1)
+            self.processor._tile_before(-1)
 
         with self.assertRaises(AssertionError):
-            self.generator._tile_before(256)
+            self.processor._tile_before(256)
 
     def test_find_areas_four_rectangles(self):
-        self.generator._setup()
+        self.processor._setup(self.pathmap)
 
-        tile = self.generator._tiles[0]
+        tile = self.processor._tiles[0]
         tile.pm.data = [False for _ in range(PathmapTile.UNPACKED_SIZE)]
         self._draw_rect(tile.pm.data, 31, 0, 4, 4)    # 31/0  34/3
         self._draw_rect(tile.pm.data, 0, 60, 10, 4)   #  0/60 9/63
         self._draw_rect(tile.pm.data, 10, 10, 10, 10) # 10/10 19/19
         self._draw_rect(tile.pm.data, 32, 32, 16, 16) # 32/32 47/47
 
-        self.generator._find_areas(tile)
+        self.processor._find_areas(tile)
 
         self.assertRectangleInArea(tile.areas[3], 31, 0, 4, 4)
         self.assertRectangleInArea(tile.areas[2], 0, 60, 10, 4)
@@ -122,9 +131,9 @@ class SmallonesGeneratorTest(unittest.TestCase):
         self.assertRectangleInArea(tile.areas[0], 32, 32, 16, 16)
 
     def test_find_areas_two_lines(self):
-        self.generator._setup()
+        self.processor._setup(self.pathmap)
 
-        tile = self.generator._tiles[0]
+        tile = self.processor._tiles[0]
         tile.pm.data = [False for _ in range(PathmapTile.UNPACKED_SIZE)]
 
         area0 = [4095, 4094, 4030, 4029, 3965, 3964, 3900, 3899]
@@ -136,7 +145,7 @@ class SmallonesGeneratorTest(unittest.TestCase):
         for i in area1:
             tile.pm.data[i] = True
 
-        self.generator._find_areas(tile)
+        self.processor._find_areas(tile)
 
         self.assertEqual(2, len(tile.areas))
         tileArea0 = self.lines_to_pathmap(tile.areas[0])
@@ -155,9 +164,9 @@ class SmallonesGeneratorTest(unittest.TestCase):
                 self.assertFalse(tileArea1[i])
 
     def test_find_areas_only_adds_four_largest_areas(self):
-        self.generator._setup()
+        self.processor._setup(self.pathmap)
 
-        tile = self.generator._tiles[0]
+        tile = self.processor._tiles[0]
         tile.pm.data = [False for _ in range(PathmapTile.UNPACKED_SIZE)]
         self._draw_rect(tile.pm.data, 31, 0, 4, 4)    #  16
         self._draw_rect(tile.pm.data, 0, 60, 10, 4)   #  40
@@ -167,7 +176,7 @@ class SmallonesGeneratorTest(unittest.TestCase):
         self._draw_rect(tile.pm.data, 8, 0, 4, 3)     #  12
         self._draw_rect(tile.pm.data, 61, 62, 3, 2)   #   6
 
-        self.generator._find_areas(tile)
+        self.processor._find_areas(tile)
 
         self.assertEqual(4, len(tile.areas))
         self.assertRectangleInArea(tile.areas[3], 31, 0, 4, 4)
@@ -175,14 +184,14 @@ class SmallonesGeneratorTest(unittest.TestCase):
         self.assertRectangleInArea(tile.areas[1], 10, 10, 10, 10)
         self.assertRectangleInArea(tile.areas[0], 32, 32, 16, 16)
 
-    def test_generate_diamonds_four_way_connect(self):
+    def test_e2e_diamonds_four_way_connect(self):
         for y in range(16):
             for x in range(16):
                 tile = self.pathmap.tiles[y * 16 + x]
                 tile.flag = PathmapTile.FLAG_MIXED
                 self._draw_diamond(tile.data)
 
-        smallones, _ = self.generator.generate()
+        levels, smallones, infomap = self.processor.process(self.pathmap)
 
         for y in range(16):
             for x in range(16):
@@ -213,6 +222,17 @@ class SmallonesGeneratorTest(unittest.TestCase):
                 else:
                     self.assertEqual(2, num_connected_bottom, f"Tile #{tile_index} at {x},{y} has {num_connected_bottom} connected bottom")
                     self.assertEqual(2, num_connected_right, f"Tile #{tile_index} at {x},{y} has {num_connected_right} connected right")
+
+        # roundtrip save/load to test for file validity
+        for i, level in enumerate(levels):
+            level.save(self.root / f'level{i + 1}.raw')
+            Pathmap.load(self.root / f'level{i + 1}.raw')
+
+        smallones.save(self.root / 'smallones.raw')
+        Smallones.load(self.root / 'smallones.raw')
+
+        infomap.save(self.root / 'infomap.raw')
+        Pathmap.load(self.root / 'infomap.raw')
 
     def _draw_rect(self, area, x, y, width, height):
         for iy in range(y, y + height):

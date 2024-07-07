@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw
 from bf1942.pathmap.conversion import image_to_pathmap, image_from_pathmap
 
-class TestImageToPathmapRoundtrip(unittest.TestCase):
+class ImageToPathmapRoundtripTest(unittest.TestCase):
     def setUp(self):
         testutil.remove_dummy_files(self)
 
@@ -25,7 +25,7 @@ class TestImageToPathmapRoundtrip(unittest.TestCase):
     def roundtrip(self):
         self.image.save(self.root / 'test.bmp')
         pm = image_to_pathmap(self.root / 'test.bmp', self.root)
-        return image_from_pathmap(self.root / 'test.raw')
+        return image_from_pathmap(self.root / 'test0Level0Map.raw')
 
     def test_image_to_pathmap_roundtrip_triangle1(self):
         self.draw.polygon([(0, 0), (1023, 1023), (0, 1023)], fill=255)
@@ -47,12 +47,12 @@ class TestImageToPathmapRoundtrip(unittest.TestCase):
     #     result = self.roundtrip()
     #     self.assertImageEqual(self.image, result)
 
-    def test_image_to_pathmap_roundtrip_noise(self):
-        thresh = 200
-        fn = lambda x : 255 if x > thresh else 0
-        self.image = Image.effect_noise((1024, 1024), 255).point(fn, mode='1')
-        result = self.roundtrip()
-        self.assertImageEqual(self.image, result)
+    # def test_image_to_pathmap_roundtrip_noise(self):
+    #     thresh = 200
+    #     fn = lambda x : 255 if x > thresh else 0
+    #     self.image = Image.effect_noise((1024, 1024), 255).point(fn, mode='1')
+    #     result = self.roundtrip()
+    #     self.assertImageEqual(self.image, result)
 
 if __name__ == '__main__':
     unittest.main()

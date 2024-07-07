@@ -2,7 +2,7 @@ import unittest
 import bf1942.tests.util as testutil
 from bf1942.pathmap.conversion import convert_pathmap
 
-class ConvertPathmap(unittest.TestCase):
+class ConvertPathmapTest(unittest.TestCase):
     def setUp(self):
         testutil.remove_dummy_files(self)
 

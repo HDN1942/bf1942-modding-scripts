@@ -2,7 +2,7 @@ import unittest
 import bf1942.tests.util as testutil
 from bf1942.pathmap.shell import detect_output_format
 
-class DetectOutputFormat(unittest.TestCase):
+class DetectOutputFormatTest(unittest.TestCase):
     def setUp(self):
         testutil.remove_dummy_files(self)
 

@@ -18,6 +18,7 @@ class PathmapHeaderTest(unittest.TestCase):
         # 2048 level 0 map
         pm = PathmapHeader((5, 5, 6, 0, 0, 2))
 
+        self.assertTrue(pm.is_valid())
         self.assertEqual(32, pm.tile_length)
         self.assertEqual(1024, pm.tile_total)
         self.assertEqual(64, pm.tile_size)
@@ -28,6 +29,7 @@ class PathmapHeaderTest(unittest.TestCase):
         # 2048 level 1 map
         pm = PathmapHeader((4, 4, 7, 1, 0, 2))
 
+        self.assertTrue(pm.is_valid())
         self.assertEqual(16, pm.tile_length)
         self.assertEqual(256, pm.tile_total)
         self.assertEqual(64, pm.tile_size)
@@ -37,6 +39,8 @@ class PathmapHeaderTest(unittest.TestCase):
 
         # 2048 infomap
         pm = PathmapHeader((5, 5, 6, 1, 1, 2))
+
+        self.assertTrue(pm.is_valid())
         self.assertEqual(32, pm.tile_length)
         self.assertEqual(1024, pm.tile_total)
         self.assertEqual(32, pm.tile_size)
@@ -47,6 +51,7 @@ class PathmapHeaderTest(unittest.TestCase):
         # 4096 level 0 map
         pm = PathmapHeader((6, 6, 6, 0, 0, 2))
 
+        self.assertTrue(pm.is_valid())
         self.assertEqual(64, pm.tile_length)
         self.assertEqual(4096, pm.tile_total)
         self.assertEqual(64, pm.tile_size)
@@ -57,6 +62,7 @@ class PathmapHeaderTest(unittest.TestCase):
         # 4096 level 2 map
         pm = PathmapHeader((4, 4, 8, 2, 0, 2))
 
+        self.assertTrue(pm.is_valid())
         self.assertEqual(16, pm.tile_length)
         self.assertEqual(256, pm.tile_total)
         self.assertEqual(64, pm.tile_size)
@@ -66,6 +72,8 @@ class PathmapHeaderTest(unittest.TestCase):
 
         # 4096 infomap
         pm = PathmapHeader((6, 6, 6, 1, 1, 2))
+
+        self.assertTrue(pm.is_valid())
         self.assertEqual(64, pm.tile_length)
         self.assertEqual(4096, pm.tile_total)
         self.assertEqual(32, pm.tile_size)

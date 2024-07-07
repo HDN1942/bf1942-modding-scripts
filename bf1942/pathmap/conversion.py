@@ -2,6 +2,7 @@ import math
 from pathlib import Path
 from PIL import Image, ImageDraw
 from bf1942.pathmap.pathmap import Pathmap, PathmapHeader, PathmapTile
+from bf1942.pathmap.processor import PathmapProcessor
 from bf1942.pathmap.shell import SUPPORTED_FORMATS
 
 COLOR_DOGO = 0
@@ -165,7 +166,7 @@ def image_from_textures(source):
 
     source_path = Path(source)
 
-    tex_re = re.compile('tx(\d{2})x(\d{2})\.dds', re.IGNORECASE)
+    tex_re = re.compile(r'tx(\d{2})x(\d{2})\.dds', re.IGNORECASE)
 
     textures = [f for f in source_path.iterdir() if f.is_file() and tex_re.match(f.name)]
     texture_count = len(textures)
@@ -210,8 +211,17 @@ def textures_from_image(image, destination):
 
 def generate_pathmap_files(pathmap, source, destination):
     # TODO get name from source (expect something like Tank, Tank0, Tank0Level0Map)
+    pm_name = source.stem
+    pm_index = '0'
 
-    pathmap.save(destination / f'{source.stem}.raw')
+    # TODO handle boat
+    pathmap.save(destination / f'{pm_name}{pm_index}Level0Map.raw')
 
-    # TODO compress additional levels and save each
-    # TODO generate smallones and infomap and save each
+    processor = PathmapProcessor()
+    levels, smallones, infomap = processor.process(pathmap)
+
+    for i, level in enumerate(levels):
+        level.save(destination / f'{pm_name}{pm_index}Level{i + 1}Map.raw')
+
+    smallones.save(destination / f'{pm_name}.raw')
+    infomap.save(destination / f'{pm_name}Info.raw')

@@ -3,6 +3,53 @@ import struct
 from pathlib import Path
 from bf1942.pathmap.util import all_same, pack_data, unpack_data, pack_data2b, unpack_data2b
 
+class Pathmap:
+    '''A raw pathmap.'''
+
+    def __init__(self, header, tiles):
+        self.header = header
+        '''The pathmap header.'''
+
+        self.tiles = tiles
+        '''Tiles within the pathmap. Will be instances of PathmapTile for normal pathmaps or InfomapTile for infomaps.'''
+
+    def save(self, destination_file):
+        '''Save a raw pathmap file.'''
+
+        with open(destination_file, 'wb') as file:
+            self.header.write(file)
+            for tile in self.tiles:
+                tile.write(file)
+
+    @classmethod
+    def load(cls, source_file):
+        '''Load a raw pathmap file.'''
+
+        src_path = Path(source_file)
+
+        assert src_path.is_file()
+
+        with open(src_path, 'rb') as file:
+            header = PathmapHeader.from_file(file)
+
+            if not header.is_valid():
+                raise ValueError('Invalid header')
+
+            file.seek(header.data_offset * 4, 1)
+
+            tiles = []
+            for _ in range(header.tile_total):
+                if header.is_info:
+                    tiles.append(InfomapTile.from_file(file))
+                else:
+                    tiles.append(PathmapTile.from_file(file))
+
+            # check we're at EOF
+            if file.read(1) != b'':
+                raise ValueError('Invalid data length')
+
+        return Pathmap(header, tiles)
+
 class PathmapHeader:
     '''Header for a raw pathmap file.'''
 
@@ -226,50 +273,3 @@ class InfomapTile:
             return InfomapTile(flag, [3 for _ in range(cls.UNPACKED_SIZE)])
         else:
             return InfomapTile(flag, [0 for _ in range(cls.UNPACKED_SIZE)])
-
-class Pathmap:
-    '''A raw pathmap.'''
-
-    def __init__(self, header, tiles):
-        self.header = header
-        '''The pathmap header.'''
-
-        self.tiles = tiles
-        '''Tiles within the pathmap. Will be instances of PathmapTile for normal pathmaps or InfomapTile for infomaps.'''
-
-    def save(self, destination_file):
-        '''Save a raw pathmap file.'''
-
-        with open(destination_file, 'wb') as file:
-            self.header.write(file)
-            for tile in self.tiles:
-                tile.write(file)
-
-    @classmethod
-    def load(cls, source_file):
-        '''Load a raw pathmap file.'''
-
-        src_path = Path(source_file)
-
-        assert src_path.is_file()
-
-        with open(src_path, 'rb') as file:
-            header = PathmapHeader.from_file(file)
-
-            if not header.is_valid():
-                raise ValueError('Invalid header')
-
-            file.seek(header.data_offset * 4, 1)
-
-            tiles = []
-            for _ in range(header.tile_total):
-                if header.is_info:
-                    tiles.append(InfomapTile.from_file(file))
-                else:
-                    tiles.append(PathmapTile.from_file(file))
-
-            # check we're at EOF
-            if file.read(1) != b'':
-                raise ValueError('Invalid data length')
-
-        return Pathmap(header, tiles)

@@ -3,26 +3,30 @@ from .pathmap import InfomapTile, Pathmap, PathmapHeader, PathmapTile
 from .smallones import Smallones, SmallonesTile
 from .util import all_same
 
-class SmallonesGenerator:
-    def __init__(self, pathmap):
+class PathmapProcessor:
+    '''Processes a pathmap, producing compressed levels, smallones and infomap files.'''
+
+    def process(self, pathmap):
+        self._setup(pathmap)
+        self._generate_smallones()
+        self._generate_info()
+        self._generate_compressed_maps()
+
+        return (self._levels, self._smallones, self._info)
+
+    def _setup(self, pathmap):
         self._pathmap = pathmap
         self._tile_length = pathmap.header.tile_length
         self._tile_total = pathmap.header.tile_total
         self._tiles = []
+        self._levels = []
         self._smallones = Smallones.new(self._tile_length)
+        self._info = None
 
-    def generate(self):
-        self._setup()
-        self._generate_smallones()
-        self._generate_info()
-
-        return (self._smallones, self._info)
-
-    def _setup(self):
         for i in range(self._tile_total):
             so_tile = self._smallones.tiles[i]
             pm_tile = self._pathmap.tiles[i]
-            self._tiles.append(SmallonesGeneratorTile(self, i))
+            self._tiles.append(Tile(self, i))
 
         for i in range(self._tile_total):
             tile = self._tiles[i]
@@ -57,10 +61,10 @@ class SmallonesGenerator:
                     # nothing to do, tile can't have a waypoint
                     pass
                 elif tile.pm.flag == PathmapTile.FLAG_DOGO:
-                    tile.areas.append(SmallonesArea.dogo())
+                    tile.areas.append(Area.dogo())
                     # genpathmaps uses 48 (top right corner) as the default position for a full DOGO tile.
                     # This implementation uses tile center (32) instead as that's how Dice did it in the original levels.
-                    self._set_point(tile, 0, PathmapTile.TILE_SIZE / 2, PathmapTile.TILE_SIZE / 2)
+                    self._set_point(tile, 0, PathmapTile.TILE_SIZE // 2, PathmapTile.TILE_SIZE // 2)
                 else:
                     self._find_areas(tile)
 
@@ -125,7 +129,7 @@ class SmallonesGenerator:
                 self._add_line(tile, y, line_start, line_end)
 
         # convert collected lines into area objects
-        tile.areas = [SmallonesArea.from_lines(a) for a in tile.areas]
+        tile.areas = [Area.from_lines(a) for a in tile.areas]
 
         # sort areas largest to smallest
         tile.areas.sort(key=lambda a: a.size)
@@ -235,17 +239,20 @@ class SmallonesGenerator:
 
         self._info = Pathmap(info_header, info_tiles)
 
-class SmallonesGeneratorTile:
-    def __init__(self, generator, index):
-        self.generator = generator
+    def _generate_compressed_maps(self):
+        pass
+
+class Tile:
+    def __init__(self, processor, index):
+        self.processor = processor
         self.index = index
-        self.so = self.generator._smallones.tiles[index]
-        self.pm = self.generator._pathmap.tiles[index]
+        self.so = self.processor._smallones.tiles[index]
+        self.pm = self.processor._pathmap.tiles[index]
         self.above = None
         self.before = None
         self.areas = []
 
-class SmallonesArea:
+class Area:
     def __init__(self, geom, data):
         self.geom = geom
         self.data = data
@@ -263,7 +270,7 @@ class SmallonesArea:
             for i in range(start_index, end_index):
                 data[i] = True
 
-        return SmallonesArea(geom, data)
+        return Area(geom, data)
 
     @classmethod
     def dogo(cls):
@@ -277,8 +284,4 @@ class SmallonesArea:
     def _fill(cls, value):
         geom = Polygon([(0, 0), (PathmapTile.TILE_SIZE, 0), (PathmapTile.TILE_SIZE, PathmapTile.TILE_SIZE), (0, PathmapTile.TILE_SIZE), (0, 0)])
         data = [value for _ in range(PathmapTile.UNPACKED_SIZE)]
-        return SmallonesArea(geom, data)
-
-def generate_smallones(pathmap):
-    generator = SmallonesGenerator(pathmap)
-    return generator.generate()
+        return Area(geom, data)
