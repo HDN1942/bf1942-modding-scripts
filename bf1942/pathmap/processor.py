@@ -1,4 +1,6 @@
 from shapely import MultiLineString, Polygon
+from PIL import Image
+from .conversion import image_from_pathmap, pathmap_from_image
 from .pathmap import InfomapTile, Pathmap, PathmapHeader, PathmapTile
 from .smallones import Smallones, SmallonesTile
 from .util import all_same
@@ -177,13 +179,13 @@ class PathmapProcessor:
     def _generate_info(self):
         # TODO level is 3 for sea vehicles
         # - can get from pathmap?
-        level = 1
+        compression_level = 1
 
         info_header = PathmapHeader([
             self._pathmap.header.ln2_tiles_per_row,
             self._pathmap.header.ln2_tiles_per_column,
             self._pathmap.header.ln2_tile_resolution,
-            level,
+            compression_level,
             1, # infomap flag
             2  # standard data offset (2 DWORDs)
         ])
@@ -240,7 +242,15 @@ class PathmapProcessor:
         self._info = Pathmap(info_header, info_tiles)
 
     def _generate_compressed_maps(self):
-        pass
+        # TODO boats need levels 2-5
+
+        with image_from_pathmap(self._pathmap) as image:
+            for i in range(1, 3):
+                compressed_size = self._pathmap.header.map_width >> i
+
+                compressed = image.resize((compressed_size, compressed_size), Image.NEAREST)
+                pm = pathmap_from_image(compressed, compression_level=i)
+                self._levels.append(pm)
 
 class Tile:
     def __init__(self, processor, index):

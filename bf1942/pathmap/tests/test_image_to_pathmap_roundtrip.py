@@ -2,7 +2,7 @@ import unittest
 import bf1942.tests.util as testutil
 from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw
-from bf1942.pathmap.conversion import image_to_pathmap, image_from_pathmap
+from bf1942.pathmap.conversion import image_from_pathmap, pathmap_from_image
 
 class ImageToPathmapRoundtripTest(unittest.TestCase):
     def setUp(self):
@@ -23,9 +23,8 @@ class ImageToPathmapRoundtripTest(unittest.TestCase):
             self.fail(f'images are different {bbox[0]}x{bbox[1]} {bbox[2]}x{bbox[3]}')
 
     def roundtrip(self):
-        self.image.save(self.root / 'test.bmp')
-        pm = image_to_pathmap(self.root / 'test.bmp', self.root)
-        return image_from_pathmap(self.root / 'test0Level0Map.raw')
+        pm = pathmap_from_image(self.image)
+        return image_from_pathmap(pm)
 
     def test_image_to_pathmap_roundtrip_triangle1(self):
         self.draw.polygon([(0, 0), (1023, 1023), (0, 1023)], fill=255)

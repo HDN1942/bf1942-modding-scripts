@@ -2,7 +2,6 @@ import math
 from pathlib import Path
 from PIL import Image, ImageDraw
 from bf1942.pathmap.pathmap import Pathmap, PathmapHeader, PathmapTile
-from bf1942.pathmap.processor import PathmapProcessor
 from bf1942.pathmap.shell import SUPPORTED_FORMATS
 
 COLOR_DOGO = 0
@@ -50,7 +49,8 @@ def convert_pathmap(source, destination, in_format, out_format):
             image_to_pathmap(source_path, destination_path)
 
 def pathmap_to_image(source, destination):
-    image = image_from_pathmap(source)
+    pathmap = Pathmap.load(source)
+    image = image_from_pathmap(pathmap)
     image.save(destination)
     image.close()
 
@@ -69,12 +69,13 @@ def textures_to_pathmap(source, destination):
     generate_pathmap_files(pathmap, source, destination)
 
 def pathmap_to_textures(source, destination):
-    image = image_from_pathmap(source)
+    pathmap = Pathmap.load(source)
+    image = image_from_pathmap(pathmap)
     textures_from_image(image, destination)
     image.close()
 
-def pathmap_from_image(image):
-    header = pathmap_header_from_image(image)
+def pathmap_from_image(image, compression_level=0):
+    header = pathmap_header_from_image(image, compression_level)
 
     i = 0
     raw_tiles = [[] for _ in range(header.tile_total)]
@@ -99,7 +100,7 @@ def pathmap_from_image(image):
 
     return Pathmap(header, tiles)
 
-def pathmap_header_from_image(image):
+def pathmap_header_from_image(image, compression_level):
     '''Create a PathmapHeader instance from an image.'''
 
     if image.width != image.height:
@@ -108,17 +109,16 @@ def pathmap_header_from_image(image):
     if image.width % 8 > 0:
         raise ValueError('Image must be evenly divisible by 8')
 
-    level = 0
-    resolution = LEVEL0_RESOLUTION + level
-    tiles = image.width >> resolution
+    resolution = LEVEL0_RESOLUTION + compression_level
+    # image size is already compressed
+    tiles = image.width >> LEVEL0_RESOLUTION
     ln2_tiles = int(tiles - 1).bit_length()
 
-    return PathmapHeader((ln2_tiles, ln2_tiles, resolution, level, 0, 2))
+    return PathmapHeader((ln2_tiles, ln2_tiles, resolution, compression_level, 0, 2))
 
-def image_from_pathmap(source):
+def image_from_pathmap(pathmap):
     '''Convert a raw pathmap file to an image.'''
 
-    pathmap = Pathmap.load(source)
     header = pathmap.header
 
     if header.is_info:
@@ -217,6 +217,7 @@ def generate_pathmap_files(pathmap, source, destination):
     # TODO handle boat
     pathmap.save(destination / f'{pm_name}{pm_index}Level0Map.raw')
 
+    from bf1942.pathmap.processor import PathmapProcessor
     processor = PathmapProcessor()
     levels, smallones, infomap = processor.process(pathmap)
 
