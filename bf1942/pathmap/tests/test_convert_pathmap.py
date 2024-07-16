@@ -1,6 +1,9 @@
 import unittest
+from PIL import Image, ImageDraw
 import bf1942.tests.util as testutil
 from bf1942.pathmap.conversion import convert_pathmap
+from bf1942.pathmap.pathmap import Pathmap
+from bf1942.pathmap.smallones import Smallones
 
 class ConvertPathmapTest(unittest.TestCase):
     def setUp(self):
@@ -87,6 +90,44 @@ class ConvertPathmapTest(unittest.TestCase):
     def test_assert_on_same_source_and_destination_file(self):
         with self.assertRaises(AssertionError):
             convert_pathmap(self.root / 'file1', self.root / 'file1', 'raw', 'bmp')
+
+    def test_convert_image_to_pathmap(self):
+        with Image.new('1', (2048, 2048)) as im:
+            draw = ImageDraw.Draw(im)
+            draw.polygon([(0, 0), (1023, 1023), (0, 1023)], fill=255)
+            im.save(self.root / 'Tank0Level0Map.bmp')
+
+        convert_pathmap(self.root / 'Tank0Level0Map.bmp', self.root / 'dir1', 'bmp', 'raw')
+
+        self.assertTrue((self.root / 'dir1' / 'Tank0Level0Map.raw').exists())
+        self.assertTrue((self.root / 'dir1' / 'Tank0Level1Map.raw').exists())
+        self.assertTrue((self.root / 'dir1' / 'Tank0Level2Map.raw').exists())
+        self.assertTrue((self.root / 'dir1' / 'TankInfo.raw').exists())
+        self.assertTrue((self.root / 'dir1' / 'Tank.raw').exists())
+
+        pm = Pathmap.load(self.root / 'dir1' / 'Tank0Level0Map.raw')
+        self.assertEqual(2048, pm.header.map_width)
+        self.assertEqual(32, pm.header.tile_length)
+        self.assertEqual(0, pm.header.compression_level)
+
+        pm = Pathmap.load(self.root / 'dir1' / 'Tank0Level1Map.raw')
+        self.assertEqual(2048, pm.header.map_width)
+        self.assertEqual(16, pm.header.tile_length)
+        self.assertEqual(1, pm.header.compression_level)
+
+        pm = Pathmap.load(self.root / 'dir1' / 'Tank0Level2Map.raw')
+        self.assertEqual(2048, pm.header.map_width)
+        self.assertEqual(8, pm.header.tile_length)
+        self.assertEqual(2, pm.header.compression_level)
+
+        pm = Pathmap.load(self.root / 'dir1' / 'TankInfo.raw')
+        self.assertEqual(2048, pm.header.map_width)
+        self.assertEqual(32, pm.header.tile_length)
+        self.assertEqual(1, pm.header.compression_level)
+        self.assertEqual(1, pm.header.is_info)
+
+        so = Smallones.load(self.root / 'dir1' / 'Tank.raw')
+        self.assertEqual(32, so.header.tile_length)
 
 if __name__ == '__main__':
     unittest.main()

@@ -2,14 +2,14 @@ import math
 from pathlib import Path
 from PIL import Image, ImageDraw
 from bf1942.pathmap.pathmap import Pathmap, PathmapHeader, PathmapTile
-from bf1942.pathmap.shell import SUPPORTED_FORMATS
+from bf1942.pathmap.shell import SUPPORTED_FORMATS, parse_pathmap_filename
 
 COLOR_DOGO = 0
 COLOR_NOGO = 255
 
 LEVEL0_RESOLUTION = 6 # ln2 value, 64 in base 10
 
-TILE_SIZE = 256
+DDS_TILE_SIZE = 256
 
 def convert_pathmap(source, destination, in_format, out_format):
     '''Convert pathmap to/from raw and image formats.'''
@@ -175,17 +175,17 @@ def image_from_textures(source):
     if tile_count * tile_count != texture_count or tile_count % 4 > 0:
         raise FileNotFoundError('Invalid number of texture files')
 
-    image_size = tile_count * TILE_SIZE
+    image_size = tile_count * DDS_TILE_SIZE
 
     merge = Image.new('1', (image_size, image_size))
 
     for texture in textures:
         match = tex_re.match(texture.name)
-        x = int(match.group(1)) * TILE_SIZE
-        y = int(match.group(2)) * TILE_SIZE
+        x = int(match.group(1)) * DDS_TILE_SIZE
+        y = int(match.group(2)) * DDS_TILE_SIZE
 
         with Image.open(texture) as tx:
-            tx_half = tx.resize((TILE_SIZE, TILE_SIZE), Image.NEAREST)
+            tx_half = tx.resize((DDS_TILE_SIZE, DDS_TILE_SIZE), Image.NEAREST)
             merge.paste(tx_half, (x, y))
 
     return merge.transpose(Image.FLIP_TOP_BOTTOM)
@@ -195,34 +195,32 @@ def textures_from_image(image, destination):
 
     destination_path = Path(destination)
 
-    tile_count = image.width / TILE_SIZE
+    tile_count = image.width / DDS_TILE_SIZE
     if image.width != image.height or tile_count % 4 > 0:
         raise FileNotFoundError('Invalid image size')
 
-    for iy in range(0, image.height, TILE_SIZE):
-        for ix in range(0, image.width, TILE_SIZE):
-            file = destination_path / f'tx{iy // TILE_SIZE:02}x{ix // TILE_SIZE:02}.dds'
+    for iy in range(0, image.height, DDS_TILE_SIZE):
+        for ix in range(0, image.width, DDS_TILE_SIZE):
+            file = destination_path / f'tx{iy // DDS_TILE_SIZE:02}x{ix // DDS_TILE_SIZE:02}.dds'
 
-            image.crop((ix, iy, ix + TILE_SIZE, iy + TILE_SIZE)) \
-                .resize((TILE_SIZE * 2, TILE_SIZE * 2), Image.NEAREST) \
+            image.crop((ix, iy, ix + DDS_TILE_SIZE, iy + DDS_TILE_SIZE)) \
+                .resize((DDS_TILE_SIZE * 2, DDS_TILE_SIZE * 2), Image.NEAREST) \
                 .transpose(Image.FLIP_TOP_BOTTOM) \
                 .convert(mode='RGB') \
                 .save(file) # TODO requires DXT1/BC1 non-alpha mode, but it's not supported (yet)
 
 def generate_pathmap_files(pathmap, source, destination):
-    # TODO get name from source (expect something like Tank, Tank0, Tank0Level0Map)
-    pm_name = source.stem
-    pm_index = '0'
+    name, index, level = parse_pathmap_filename(source)
 
     # TODO handle boat
-    pathmap.save(destination / f'{pm_name}{pm_index}Level0Map.raw')
+    pathmap.save(destination / f'{name}{index}Level0Map.raw')
 
     from bf1942.pathmap.processor import PathmapProcessor
     processor = PathmapProcessor()
     levels, smallones, infomap = processor.process(pathmap)
 
     for i, level in enumerate(levels):
-        level.save(destination / f'{pm_name}{pm_index}Level{i + 1}Map.raw')
+        level.save(destination / f'{name}{index}Level{i + 1}Map.raw')
 
-    smallones.save(destination / f'{pm_name}.raw')
-    infomap.save(destination / f'{pm_name}Info.raw')
+    smallones.save(destination / f'{name}.raw')
+    infomap.save(destination / f'{name}Info.raw')

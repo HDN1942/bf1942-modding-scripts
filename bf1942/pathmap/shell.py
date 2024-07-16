@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 SUPPORTED_FORMATS = ['raw', 'bmp', 'png', 'dds']
@@ -43,3 +44,48 @@ def detect_output_format(in_format, path):
     # invalid format
     return None
 
+PM_STANDARD_FORMAT = re.compile('(.*)(\d)Level(\d)Map')
+PM_INFOMAP_FORMAT = re.compile('(.*)Info$')
+
+PM_KNOWN_MAPS = {
+    'Tank': 0,
+    'Infantry': 1,
+    'Boat': 2,
+    'LandingCraft': 3,
+    'Car': 4,
+    'Amphibius': 4
+}
+PM_BOAT_MAPS = ['Boat', 'LandingCraft']
+
+def parse_pathmap_filename(filename):
+    '''Get pathmap name, index, level from filename.'''
+
+    assert filename != ''
+
+    path = Path(filename)
+
+    match = PM_STANDARD_FORMAT.match(path.stem)
+    if match is not None:
+        name = match.group(1)
+        index = int(match.group(2))
+        level = int(match.group(3))
+        return name, index, level
+
+    match = PM_INFOMAP_FORMAT.match(path.stem)
+    if match is not None:
+        name = match.group(1)
+        if name in PM_KNOWN_MAPS:
+            index = PM_KNOWN_MAPS[name]
+            level = 2 if name in PM_BOAT_MAPS else 0
+        else:
+            index = level = 0
+        return name, index, level
+
+    name = path.stem
+    if name in PM_KNOWN_MAPS:
+        index = PM_KNOWN_MAPS[name]
+        level = 2 if name in PM_BOAT_MAPS else 0
+    else:
+        index = level = 0
+
+    return name, index, level
