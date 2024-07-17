@@ -11,7 +11,7 @@ LEVEL0_RESOLUTION = 6 # ln2 value, 64 in base 10
 
 DDS_TILE_SIZE = 256
 
-def convert_pathmap(source, destination, in_format, out_format):
+def convert_pathmap(source, destination, in_format, out_format, compression_level=0):
     '''Convert pathmap to/from raw and image formats.'''
 
     assert source is not None
@@ -44,37 +44,59 @@ def convert_pathmap(source, destination, in_format, out_format):
             pathmap_to_image(source_path, destination_path)
     else:
         if in_format == 'dds':
-            textures_to_pathmap(source_path, destination_path)
+            textures_to_pathmap(source_path, destination_path, compression_level)
         else:
             image_to_pathmap(source_path, destination_path)
 
 def pathmap_to_image(source, destination):
+    '''Convert a pathmap raw file to an image file.'''
+
     pathmap = Pathmap.load(source)
-    image = image_from_pathmap(pathmap)
-    image.save(destination)
-    image.close()
+
+    with image_from_pathmap(pathmap) as image:
+        image.save(destination)
 
 def image_to_pathmap(source, destination):
-    image = Image.open(source)
-    pathmap = pathmap_from_image(image)
-    image.close()
+    '''Convert an image file to pathmap raw files.'''
+
+    info = parse_pathmap_filename(source)
+    compression_level = 2 if info.is_boat else 0
+
+    with Image.open(source) as image:
+        pathmap = pathmap_from_image(image, compression_level)
 
     generate_pathmap_files(pathmap, source, destination)
 
-def textures_to_pathmap(source, destination):
-    image = image_from_textures(source)
-    pathmap = pathmap_from_image(image)
-    image.close()
+def textures_to_pathmap(source, destination, compression_level=0):
+    '''Convert DDS textures to pathmap raw files.'''
+
+    with image_from_textures(source) as image:
+        if compression_level > 0:
+            size = image.width >> compression_level
+            resized = image.resize((size, size), Image.NEAREST)
+            pathmap = pathmap_from_image(resized, compression_level)
+        else:
+            pathmap = pathmap_from_image(image)
 
     generate_pathmap_files(pathmap, source, destination)
 
 def pathmap_to_textures(source, destination):
+    '''Convert a pathmap raw file to DDS textures.'''
+
     pathmap = Pathmap.load(source)
-    image = image_from_pathmap(pathmap)
-    textures_from_image(image, destination)
-    image.close()
+
+    with image_from_pathmap(pathmap) as image:
+        if pathmap.header.compression_level > 0:
+            # image must be resized to map size if compressed
+            size = image.width << pathmap.header.compression_level
+            resized = image.resize((size, size), Image.NEAREST)
+            textures_from_image(resized, destination)
+        else:
+            textures_from_image(image, destination)
 
 def pathmap_from_image(image, compression_level=0):
+    '''Convert a PIL Image to a Pathmap object.'''
+
     header = pathmap_header_from_image(image, compression_level)
 
     i = 0
@@ -100,31 +122,16 @@ def pathmap_from_image(image, compression_level=0):
 
     return Pathmap(header, tiles)
 
-def pathmap_header_from_image(image, compression_level):
-    '''Create a PathmapHeader instance from an image.'''
-
-    if image.width != image.height:
-        raise ValueError('Image must be square')
-
-    if image.width % 8 > 0:
-        raise ValueError('Image must be evenly divisible by 8')
-
-    resolution = LEVEL0_RESOLUTION + compression_level
-    # image size is already compressed
-    tiles = image.width >> LEVEL0_RESOLUTION
-    ln2_tiles = int(tiles - 1).bit_length()
-
-    return PathmapHeader((ln2_tiles, ln2_tiles, resolution, compression_level, 0, 2))
-
 def image_from_pathmap(pathmap):
-    '''Convert a raw pathmap file to an image.'''
+    '''Convert a Pathmap object to a PIL image.'''
 
     header = pathmap.header
 
     if header.is_info:
         raise ValueError('Pathmap is an infomap')
 
-    image = Image.new('1', (header.map_width, header.map_height))
+    size = header.map_width >> header.compression_level
+    image = Image.new('1', (size, size))
     draw = ImageDraw.Draw(image)
 
     for y in range(header.tile_length):
@@ -146,6 +153,22 @@ def image_from_pathmap(pathmap):
                 draw_mixed(image, tile.data, x1, y1, header.tile_size)
 
     return image.transpose(Image.FLIP_TOP_BOTTOM)
+
+def pathmap_header_from_image(image, compression_level):
+    '''Create a PathmapHeader instance from an image.'''
+
+    if image.width != image.height:
+        raise ValueError('Image must be square')
+
+    if image.width % 8 > 0:
+        raise ValueError('Image must be evenly divisible by 8')
+
+    resolution = LEVEL0_RESOLUTION + compression_level
+    # image size is already compressed
+    tiles = image.width >> LEVEL0_RESOLUTION
+    ln2_tiles = int(tiles - 1).bit_length()
+
+    return PathmapHeader((ln2_tiles, ln2_tiles, resolution, compression_level, 0, 2))
 
 def draw_mixed(image, data, x, y, tile_size):
     for tile_y in range(tile_size):
@@ -176,7 +199,6 @@ def image_from_textures(source):
         raise FileNotFoundError('Invalid number of texture files')
 
     image_size = tile_count * DDS_TILE_SIZE
-
     merge = Image.new('1', (image_size, image_size))
 
     for texture in textures:
@@ -210,17 +232,16 @@ def textures_from_image(image, destination):
                 .save(file) # TODO requires DXT1/BC1 non-alpha mode, but it's not supported (yet)
 
 def generate_pathmap_files(pathmap, source, destination):
-    name, index, level = parse_pathmap_filename(source)
+    info = parse_pathmap_filename(source)
 
-    # TODO handle boat
-    pathmap.save(destination / f'{name}{index}Level0Map.raw')
+    pathmap.save(destination / f'{info.name}{info.index}Level{pathmap.header.compression_level}Map.raw')
 
     from bf1942.pathmap.processor import PathmapProcessor
     processor = PathmapProcessor()
     levels, smallones, infomap = processor.process(pathmap)
 
     for i, level in enumerate(levels):
-        level.save(destination / f'{name}{index}Level{i + 1}Map.raw')
+        level.save(destination / f'{info.name}{info.index}Level{level.header.compression_level}Map.raw')
 
-    smallones.save(destination / f'{name}.raw')
-    infomap.save(destination / f'{name}Info.raw')
+    smallones.save(destination / f'{info.name}.raw')
+    infomap.save(destination / f'{info.name}Info.raw')

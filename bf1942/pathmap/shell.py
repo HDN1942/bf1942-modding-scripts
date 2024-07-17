@@ -44,18 +44,48 @@ def detect_output_format(in_format, path):
     # invalid format
     return None
 
+class ParsedPathmapFilename:
+    '''Contains the result of parsing a pathmap's filename.'''
+
+    PM_KNOWN_MAPS = {
+        'Tank': 0,
+        'Infantry': 1,
+        'Boat': 2,
+        'LandingCraft': 3,
+        'Car': 4,
+        'Amphibius': 4
+    }
+
+    PM_BOAT_MAPS = ['Boat', 'LandingCraft']
+
+    def __init__(self, name, index, level):
+        self.name = name
+        '''Root name of pathmap, ie. Tank, Infantry, Boat.'''
+
+        self.index = None
+        '''Pathmap index, should be 0-4'''
+
+        self.level = None
+        '''Map level, should be 0-5.'''
+
+        self.is_boat = name in self.PM_BOAT_MAPS
+        '''Whether or not this pathmap is a boat pathmap.'''
+
+        if index is None:
+            if name in self.PM_KNOWN_MAPS:
+                self.index = self.PM_KNOWN_MAPS[name]
+            else:
+                self.index = 0
+        else:
+            self.index = int(index)
+
+        if level is None:
+            self.level = 2 if self.is_boat else 0
+        else:
+            self.level = int(level)
+
 PM_STANDARD_FORMAT = re.compile('(.*)(\d)Level(\d)Map')
 PM_INFOMAP_FORMAT = re.compile('(.*)Info$')
-
-PM_KNOWN_MAPS = {
-    'Tank': 0,
-    'Infantry': 1,
-    'Boat': 2,
-    'LandingCraft': 3,
-    'Car': 4,
-    'Amphibius': 4
-}
-PM_BOAT_MAPS = ['Boat', 'LandingCraft']
 
 def parse_pathmap_filename(filename):
     '''Get pathmap name, index, level from filename.'''
@@ -66,26 +96,11 @@ def parse_pathmap_filename(filename):
 
     match = PM_STANDARD_FORMAT.match(path.stem)
     if match is not None:
-        name = match.group(1)
-        index = int(match.group(2))
-        level = int(match.group(3))
-        return name, index, level
+        return ParsedPathmapFilename(match.group(1), match.group(2), match.group(3))
 
     match = PM_INFOMAP_FORMAT.match(path.stem)
     if match is not None:
         name = match.group(1)
-        if name in PM_KNOWN_MAPS:
-            index = PM_KNOWN_MAPS[name]
-            level = 2 if name in PM_BOAT_MAPS else 0
-        else:
-            index = level = 0
-        return name, index, level
+        return ParsedPathmapFilename(match.group(1), None, None)
 
-    name = path.stem
-    if name in PM_KNOWN_MAPS:
-        index = PM_KNOWN_MAPS[name]
-        level = 2 if name in PM_BOAT_MAPS else 0
-    else:
-        index = level = 0
-
-    return name, index, level
+    return ParsedPathmapFilename(path.stem, None, None)

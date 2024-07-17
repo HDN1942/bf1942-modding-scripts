@@ -177,9 +177,7 @@ class PathmapProcessor:
             self._set_point(tile, i, x, y)
 
     def _generate_info(self):
-        # TODO level is 3 for sea vehicles
-        # - can get from pathmap?
-        compression_level = 1
+        compression_level = self._pathmap.header.compression_level + 1
 
         info_header = PathmapHeader([
             self._pathmap.header.ln2_tiles_per_row,
@@ -242,10 +240,11 @@ class PathmapProcessor:
         self._info = Pathmap(info_header, info_tiles)
 
     def _generate_compressed_maps(self):
-        # TODO boats need levels 2-5
+        start_range = self._pathmap.header.compression_level + 1
+        end_range = 3 if start_range == 1 else 6
 
         with image_from_pathmap(self._pathmap) as image:
-            for i in range(1, 3):
+            for i in range(start_range, end_range):
                 compressed_size = self._pathmap.header.map_width >> i
 
                 compressed = image.resize((compressed_size, compressed_size), Image.NEAREST)

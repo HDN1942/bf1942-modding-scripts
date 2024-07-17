@@ -94,7 +94,7 @@ class ConvertPathmapTest(unittest.TestCase):
     def test_convert_image_to_pathmap(self):
         with Image.new('1', (2048, 2048)) as im:
             draw = ImageDraw.Draw(im)
-            draw.polygon([(0, 0), (1023, 1023), (0, 1023)], fill=255)
+            draw.polygon([(0, 0), (2047, 2047), (0, 2047)], fill=255)
             im.save(self.root / 'Tank0Level0Map.bmp')
 
         convert_pathmap(self.root / 'Tank0Level0Map.bmp', self.root / 'dir1', 'bmp', 'raw')
@@ -128,6 +128,50 @@ class ConvertPathmapTest(unittest.TestCase):
 
         so = Smallones.load(self.root / 'dir1' / 'Tank.raw')
         self.assertEqual(32, so.header.tile_length)
+
+    def test_convert_image_to_pathmap_boat(self):
+        with Image.new('1', (512, 512)) as im:
+            draw = ImageDraw.Draw(im)
+            draw.polygon([(0, 0), (511, 511), (0, 511)], fill=255)
+            im.save(self.root / 'Boat2Level2Map.bmp')
+
+        convert_pathmap(self.root / 'Boat2Level2Map.bmp', self.root / 'dir1', 'bmp', 'raw')
+
+        self.assertTrue((self.root / 'dir1' / 'Boat2Level2Map.raw').exists())
+        self.assertTrue((self.root / 'dir1' / 'Boat2Level3Map.raw').exists())
+        self.assertTrue((self.root / 'dir1' / 'Boat2Level4Map.raw').exists())
+        self.assertTrue((self.root / 'dir1' / 'Boat2Level5Map.raw').exists())
+        self.assertTrue((self.root / 'dir1' / 'BoatInfo.raw').exists())
+        self.assertTrue((self.root / 'dir1' / 'Boat.raw').exists())
+
+        pm = Pathmap.load(self.root / 'dir1' / 'Boat2Level2Map.raw')
+        self.assertEqual(2048, pm.header.map_width)
+        self.assertEqual(8, pm.header.tile_length)
+        self.assertEqual(2, pm.header.compression_level)
+
+        pm = Pathmap.load(self.root / 'dir1' / 'Boat2Level3Map.raw')
+        self.assertEqual(2048, pm.header.map_width)
+        self.assertEqual(4, pm.header.tile_length)
+        self.assertEqual(3, pm.header.compression_level)
+
+        pm = Pathmap.load(self.root / 'dir1' / 'Boat2Level4Map.raw')
+        self.assertEqual(2048, pm.header.map_width)
+        self.assertEqual(2, pm.header.tile_length)
+        self.assertEqual(4, pm.header.compression_level)
+
+        pm = Pathmap.load(self.root / 'dir1' / 'Boat2Level5Map.raw')
+        self.assertEqual(2048, pm.header.map_width)
+        self.assertEqual(1, pm.header.tile_length)
+        self.assertEqual(5, pm.header.compression_level)
+
+        pm = Pathmap.load(self.root / 'dir1' / 'BoatInfo.raw')
+        self.assertEqual(2048, pm.header.map_width)
+        self.assertEqual(8, pm.header.tile_length)
+        self.assertEqual(3, pm.header.compression_level)
+        self.assertEqual(1, pm.header.is_info)
+
+        so = Smallones.load(self.root / 'dir1' / 'Boat.raw')
+        self.assertEqual(8, so.header.tile_length)
 
 if __name__ == '__main__':
     unittest.main()

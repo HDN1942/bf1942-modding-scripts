@@ -14,6 +14,7 @@ logging.basicConfig(level=logging.INFO)
 parser = argparse.ArgumentParser(description='Convert pathmaps to/from various formats')
 parser.add_argument('source_path', help='Source path of file, or path to directory containing files to be converted')
 parser.add_argument('destination_path', help='Destination path of file or directory for converted file(s)')
+parser.add_argument('is_boat', action='store_true', default=False, help='Flag indicating source DDS textures are for a compressed boat/landing craft pathmap. Ignored if input is not DDS.')
 args = parser.parse_args()
 
 in_format = detect_input_format(args.source_path)
@@ -26,7 +27,8 @@ if not out_format:
     eprint(f'Invalid output format')
     sys.exit(E_INVALID_FORMAT)
 
-if not convert_pathmap(args.source_path, args.destination_path, in_format, out_format):
+compression_level = 2 if args.is_boat else 0
+if not convert_pathmap(args.source_path, args.destination_path, in_format, out_format, compression_level):
     sys.exit(E_CONVERSION_ERROR)
 
 sys.exit(0)
